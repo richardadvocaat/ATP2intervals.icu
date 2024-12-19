@@ -15,3 +15,4 @@ This Python script automates the process of sending an annual training plan with
 2. **Configuration**: Update the user variables at the top of the script with your Excel file path, sheet name, athlete ID, and API key.
 3. **Run**: Execute the script to sync your training plan with intervals.icu.
 
+It focusses on load targets now, but apply time or distance targets can be added if needed.
