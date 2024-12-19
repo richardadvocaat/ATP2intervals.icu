@@ -99,9 +99,9 @@ for index, row in df.iterrows():
         print("Column 'start_date_local' not found in the Excel file.")
         continue
 
-    swim_load = int(row['Swim'])
-    bike_load = int(row['Bike'])
-    run_load = int(row['Run'])
+    swim_load = int(row['swim_load'])
+    bike_load = int(row['bike_load'])
+    run_load = int(row['run_load'])
 
     if swim_load >= 0:
         create_update_or_delete_event(start_date, swim_load, "Swim", events)
