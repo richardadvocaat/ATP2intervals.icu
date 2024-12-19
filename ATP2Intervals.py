@@ -7,7 +7,7 @@ from datetime import datetime
 excel_file_path = r"C:\TEMP\ATP.xlsx"  # Replace this with the location of your Excel file
 sheet_name = "ATP"  # Replace this with the name of the sheet
 athlete_id = "your_athlete_ID"  # Replace this with your athlete_id
-username = "API_KEY"  # This is always API_KEY
+username = "API_KEY"  # This is always "API_KEY" (not quite a variable....now)
 api_key = "yourapikey"  # Replace this with your API key
 
 # API endpoints
