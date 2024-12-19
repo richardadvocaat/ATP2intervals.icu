@@ -1,7 +1,12 @@
+import logging
+import os
 import pandas as pd
 import requests
 from requests.auth import HTTPBasicAuth
 from datetime import datetime
+
+# Configure logging
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
 # User variables
 excel_file_path = r"C:\TEMP\ATP.xlsx"  # Replace this with the location of your Excel file
@@ -18,8 +23,19 @@ headers = {
     "Content-Type": "application/json"
 }
 
-# Function to create, update, or delete events
 def create_update_or_delete_event(start_date, load_target, time_target, distance_target, activity_type, description, events):
+    """
+    Create, update, or delete events based on provided parameters.
+
+    Args:
+        start_date (str): The start date of the event.
+        load_target (int): The load target for the event.
+        time_target (int): The time target for the event.
+        distance_target (int): The distance target for the event.
+        activity_type (str): The type of activity (e.g., Swim, Ride, Run).
+        description (str): The description of the event.
+        events (list): The list of existing events.
+    """
     post_data = {
         "load_target": load_target,
         "time_target": time_target,
@@ -38,11 +54,11 @@ def create_update_or_delete_event(start_date, load_target, time_target, distance
         if load_target == 0 and time_target == 0 and distance_target == 0:
             url_delete_event = f"{url_delete}/{event_id}"
             response_delete = requests.delete(url_delete_event, headers=headers, auth=HTTPBasicAuth(username, api_key))
-            print(f"DELETE Response Status Code: {response_delete.status_code}")
+            logging.info(f"DELETE Response Status Code: {response_delete.status_code}")
             if response_delete.status_code == 200:
-                print(f"Event deleted for {activity_type} on {start_date}!")
+                logging.info(f"Event deleted for {activity_type} on {start_date}!")
             else:
-                print(f"Error deleting event for {activity_type} on {start_date}: {response_delete.status_code}")
+                logging.error(f"Error deleting event for {activity_type} on {start_date}: {response_delete.status_code}")
         elif (duplicate_event['load_target'] != load_target or 
               duplicate_event['time_target'] != time_target or 
               duplicate_event['distance_target'] != distance_target or 
@@ -54,23 +70,23 @@ def create_update_or_delete_event(start_date, load_target, time_target, distance
                 "distance_target": distance_target,
                 "description": description
             }
-            print(f"Updating event: ID={event_id}, Data={put_data}")
+            logging.info(f"Updating event: ID={event_id}, Data={put_data}")
             response_put = requests.put(url_put, headers=headers, json=put_data, auth=HTTPBasicAuth(username, api_key))
-            print("PUT Response Status Code:", response_put.status_code)
+            logging.info(f"PUT Response Status Code: {response_put.status_code}")
             if response_put.status_code == 200:
-                print(f"Duplicate event updated for {activity_type} on {start_date}!")
+                logging.info(f"Duplicate event updated for {activity_type} on {start_date}!")
             else:
-                print(f"Error updating duplicate event for {activity_type} on {start_date}: {response_put.status_code}")
+                logging.error(f"Error updating duplicate event for {activity_type} on {start_date}: {response_put.status_code}")
         else:
-            print(f"No changes needed for {activity_type} on {start_date}.")
+            logging.info(f"No changes needed for {activity_type} on {start_date}.")
     else:
         if load_target > 0 or time_target > 0 or distance_target > 0 or description:
-            print(f"New event: Data={post_data}")
+            logging.info(f"New event: Data={post_data}")
             response_post = requests.post(url_post, headers=headers, json=post_data, auth=HTTPBasicAuth(username, api_key))
             if response_post.status_code == 200:
-                print(f"New event created for {activity_type} on {start_date}!")
+                logging.info(f"New event created for {activity_type} on {start_date}!")
             else:
-                print(f"Error creating event for {activity_type} on {start_date}: {response_post.status_code}")
+                logging.error(f"Error creating event for {activity_type} on {start_date}: {response_post.status_code}")
 
 # Read the Excel file and specify the sheet
 df = pd.read_excel(excel_file_path, sheet_name=sheet_name)
@@ -96,10 +112,10 @@ if response_get.status_code == 200:
     try:
         events = response_get.json()
     except ValueError:
-        print("Error decoding JSON response.")
+        logging.error("Error decoding JSON response.")
         events = []
 else:
-    print(f"Error retrieving events: {response_get.status_code}")
+    logging.error(f"Error retrieving events: {response_get.status_code}")
     events = []
 
 # Track if description has been added for the week
@@ -109,7 +125,7 @@ for index, row in df.iterrows():
     try:
         start_date = row['start_date_local'].strftime("%Y-%m-%dT00:00:00")
     except KeyError:
-        print("Column 'start_date_local' not found in the Excel file.")
+        logging.error("Column 'start_date_local' not found in the Excel file.")
         continue
 
     swim_load = int(row['swim_load']) if not pd.isna(row['swim_load']) else 0
