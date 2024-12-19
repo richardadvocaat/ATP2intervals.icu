@@ -9,11 +9,11 @@ from datetime import datetime
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
 # User variables
-excel_file_path = os.getenv('EXCEL_FILE_PATH', r"C:\TEMP\ATP.xlsx")  # Replace this with the location of your Excel file
-sheet_name = os.getenv('SHEET_NAME', "ATP")  # Replace this with the name of the sheet
-athlete_id = os.getenv('ATHLETE_ID', "your_athlete_ID")  # Replace this with your athlete_id
-username = "API_KEY"  # This is always "API_KEY"
-api_key = os.getenv('API_KEY', "yourapikey")  # Replace this with your API key
+excel_file_path = r"C:\TEMP\ATP.xlsx"  # Replace this with the location of your Excel file
+sheet_name = "ATP"  # Replace this with the name of the sheet
+athlete_id = "your_athlete_ID"  # Replace this with your athlete_id
+username = "API_KEY"  # This is always "API_KEY" (not quite a variable....now)
+api_key = "yourapikey"  # Replace this with your API key
 
 # API endpoints
 url_post = f"https://intervals.icu/api/v1/athlete/{athlete_id}/events"
