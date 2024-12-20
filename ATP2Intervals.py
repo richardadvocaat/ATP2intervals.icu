@@ -26,16 +26,12 @@ headers = {
 def create_update_or_delete_event(start_date, load_target, time_target, distance_target, activity_type, description, events):
     """
     Create, update, or delete events based on provided parameters.
-
-    Args:
-        start_date (str): The start date of the event.
-        load_target (int): The load target for the event.
-        time_target (int): The time target for the event.
-        distance_target (int): The distance target for the event.
-        activity_type (str): The type of activity (e.g., Swim, Ride, Run).
-        description (str): The description of the event.
-        events (list): The list of existing events.
     """
+    # Ensure all targets are converted to 0 if they are None
+    load_target = load_target or 0
+    time_target = time_target or 0
+    distance_target = distance_target or 0
+
     post_data = {
         "load_target": load_target,
         "time_target": time_target,
@@ -51,6 +47,11 @@ def create_update_or_delete_event(start_date, load_target, time_target, distance
 
     if duplicate_event:
         event_id = duplicate_event['id']
+        # Ensure server-side values are handled correctly
+        server_load_target = duplicate_event.get('load_target', 0) or 0
+        server_time_target = duplicate_event.get('time_target', 0) or 0
+        server_distance_target = duplicate_event.get('distance_target', 0) or 0
+
         if load_target == 0 and time_target == 0 and distance_target == 0 and not description:
             url_delete_event = f"{url_delete}/{event_id}"
             response_delete = requests.delete(url_delete_event, headers=headers, auth=HTTPBasicAuth(username, api_key))
@@ -59,10 +60,9 @@ def create_update_or_delete_event(start_date, load_target, time_target, distance
                 logging.info(f"Event deleted for {activity_type} on {start_date}!")
             else:
                 logging.error(f"Error deleting event for {activity_type} on {start_date}: {response_delete.status_code}")
-        elif (duplicate_event['load_target'] != load_target or 
-              duplicate_event['time_target'] != time_target or 
-              duplicate_event['distance_target'] != distance_target or 
-              duplicate_event['description'] != description):
+        elif (server_load_target != load_target or 
+              server_time_target != time_target or 
+              server_distance_target != distance_target):
             url_put = f"https://intervals.icu/api/v1/athlete/{athlete_id}/events/{event_id}"
             put_data = {
                 "load_target": load_target,
@@ -153,7 +153,10 @@ for index, row in df.iterrows():
     if run_load > 0 or run_time > 0 or run_distance > 0 or (description and not description_added[week]):
         create_update_or_delete_event(start_date, run_load, run_time, run_distance, "Run", description if not description_added[week] else "", events)
         description_added[week] = True
-    if swim_load == 0 and bike_load == 0 and run_load == 0 and swim_time == 0 and bike_time == 0 and run_time == 0 and swim_distance == 0 and bike_distance == 0 and run_distance == 0 and not description:
-        create_update_or_delete_event(start_date, 0, 0, 0, "Swim", "", events)
-        create_update_or_delete_event(start_date, 0, 0, 0, "Ride", "", events)
-        create_update_or_delete_event(start_date, 0, 0, 0, "Run", "", events)
+    if swim_load == 0 and bike_load == 0 and run_load == 0 and swim_time == 0 and bike_time == 0 and run_time == 0 and swim_distance == 0 and bike_distance == 0 and run_distance == 0:
+        if period:
+            create_update_or_delete_event(start_date, 0, 0, 0, "General", description, events)
+        else:
+            create_update_or_delete_event(start_date, 0, 0, 0, "Swim", "", events)
+            create_update_or_delete_event(start_date, 0, 0, 0, "Ride", "", events)
+            create_update_or_delete_event(start_date, 0, 0, 0, "Run", "", events)
