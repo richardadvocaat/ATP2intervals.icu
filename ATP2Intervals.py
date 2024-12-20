@@ -49,7 +49,7 @@ def create_update_or_delete_event(start_date, load_target, time_target, distance
         "description": description
     }
 
-    duplicate_event = next((event for event in events if event['category'] == "TARGET" and event['name'] == post_data['name'] and event['start_date_local'] == post_data['start_date_local'] and event['type'] == post_data['type']), None)
+    duplicate_event = next((event for event in events if event['category'] == "TARGET" and event['name'] == post_data['name'] and event['start_date_local'] == post_data['start_date_local'] and event['type'] == activity_type), None)
 
     if duplicate_event:
         event_id = duplicate_event['id']
