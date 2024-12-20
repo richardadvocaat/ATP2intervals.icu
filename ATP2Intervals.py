@@ -14,20 +14,15 @@ sheet_name = os.getenv('SHEET_NAME', "ATP")  # Replace this with the name of the
 athlete_id = os.getenv('ATHLETE_ID', "athleteid")  # Replace this with your athlete_id
 username = "API_KEY"  # This is always "API_KEY"
 api_key = os.getenv('API_KEY', "yourapikey")  # Replace this with your API key
+default_activity_type = os.getenv('DEFAULT_ACTIVITY_TYPE', "Bike")  # Default activity type
 
 # API endpoints
 url_post = f"https://intervals.icu/api/v1/athlete/{athlete_id}/events"
 url_get = f"https://intervals.icu/api/v1/athlete/{athlete_id}/eventsjson"
 url_delete = f"https://intervals.icu/api/v1/athlete/{athlete_id}/events"
-headers = {
-    "Content-Type": "application/json"
-}
+headers = {"Content-Type": "application/json"}
 
 def create_update_or_delete_event(start_date, load_target, time_target, distance_target, activity_type, description, events):
-    """
-    Create, update, or delete events based on provided parameters.
-    """
-    # Ensure all targets are converted to 0 if they are None
     load_target = load_target or 0
     time_target = time_target or 0
     distance_target = distance_target or 0
@@ -47,7 +42,6 @@ def create_update_or_delete_event(start_date, load_target, time_target, distance
 
     if duplicate_event:
         event_id = duplicate_event['id']
-        # Ensure server-side values are handled correctly
         server_load_target = duplicate_event.get('load_target', 0) or 0
         server_time_target = duplicate_event.get('time_target', 0) or 0
         server_distance_target = duplicate_event.get('distance_target', 0) or 0
@@ -60,9 +54,7 @@ def create_update_or_delete_event(start_date, load_target, time_target, distance
                 logging.info(f"Event deleted for {activity_type} on {start_date}!")
             else:
                 logging.error(f"Error deleting event for {activity_type} on {start_date}: {response_delete.status_code}")
-        elif (server_load_target != load_target or 
-              server_time_target != time_target or 
-              server_distance_target != distance_target):
+        elif (server_load_target != load_target or server_time_target != time_target or server_distance_target != distance_target or duplicate_event.get('description') != description):
             url_put = f"https://intervals.icu/api/v1/athlete/{athlete_id}/events/{event_id}"
             put_data = {
                 "load_target": load_target,
@@ -90,53 +82,25 @@ def create_update_or_delete_event(start_date, load_target, time_target, distance
 
 # Read the Excel file and specify the sheet
 df = pd.read_excel(excel_file_path, sheet_name=sheet_name)
-
-# Fill NaN values with 0
 df.fillna(0, inplace=True)
 
 # Get the oldest and newest date from the Excel list
 oldest_date = df['start_date_local'].min().strftime("%Y-%m-%dT00:00:00")
 newest_date = df['start_date_local'].max().strftime("%Y-%m-%dT00:00:00")
 
-# Parameters for retrieving events with category "TARGET" within the full date range
-params = {
-    "oldest": oldest_date,
-    "newest": newest_date,
-    "category": "TARGET",
-    "resolve": "false"
-}
-
-# Send the GET request to retrieve existing events
+# Retrieve existing events
+params = {"oldest": oldest_date, "newest": newest_date, "category": "TARGET", "resolve": "false"}
 response_get = requests.get(url_get, headers=headers, params=params, auth=HTTPBasicAuth(username, api_key))
-if response_get.status_code == 200:
-    try:
-        events = response_get.json()
-    except ValueError:
-        logging.error("Error decoding JSON response.")
-        events = []
-else:
-    logging.error(f"Error retrieving events: {response_get.status_code}")
-    events = []
+events = response_get.json() if response_get.status_code == 200 else []
 
 # Track if description has been added for the week
 description_added = {}
 
 for index, row in df.iterrows():
-    try:
-        start_date = row['start_date_local'].strftime("%Y-%m-%dT00:00:00")
-    except KeyError:
-        logging.error("Column 'start_date_local' not found in the Excel file.")
-        continue
-
-    swim_load = int(row['swim_load']) if not pd.isna(row['swim_load']) else 0
-    bike_load = int(row['bike_load']) if not pd.isna(row['bike_load']) else 0
-    run_load = int(row['run_load']) if not pd.isna(row['run_load']) else 0
-    swim_time = int(row['swim_time']) if not pd.isna(row['swim_time']) else 0
-    bike_time = int(row['bike_time']) if not pd.isna(row['bike_time']) else 0
-    run_time = int(row['run_time']) if not pd.isna(row['run_time']) else 0
-    swim_distance = int(row['swim_distance']) if not pd.isna(row['swim_distance']) else 0
-    bike_distance = int(row['bike_distance']) if not pd.isna(row['bike_distance']) else 0
-    run_distance = int(row['run_distance']) if not pd.isna(row['run_distance']) else 0
+    start_date = row['start_date_local'].strftime("%Y-%m-%dT00:00:00")
+    swim_load, bike_load, run_load = int(row['swim_load']), int(row['bike_load']), int(row['run_load'])
+    swim_time, bike_time, run_time = int(row['swim_time']), int(row['bike_time']), int(row['run_time'])
+    swim_distance, bike_distance, run_distance = int(row['swim_distance']), int(row['bike_distance']), int(row['run_distance'])
     period = row['period'] if not pd.isna(row['period']) else ""
     week = row['start_date_local'].isocalendar()[1]
     description = f"You are in the {period} period." if period else ""
@@ -144,18 +108,16 @@ for index, row in df.iterrows():
     if week not in description_added:
         description_added[week] = False
 
-    if swim_load > 0 or swim_time > 0 or swim_distance > 0 or (description and not description_added[week]):
-        create_update_or_delete_event(start_date, swim_load, swim_time, swim_distance, "Swim", description if not description_added[week] else "", events)
-        description_added[week] = True
+    if swim_load > 0 or swim_time > 0 or swim_distance > 0:
+        create_update_or_delete_event(start_date, swim_load, swim_time, swim_distance, "Swim", "", events)
     if bike_load > 0 or bike_time > 0 or bike_distance > 0 or (description and not description_added[week]):
-        create_update_or_delete_event(start_date, bike_load, bike_time, bike_distance, "Ride", description if not description_added[week] else "", events)
+        create_update_or_delete_event(start_date, bike_load, bike_time, bike_distance, "Ride", description, events)
         description_added[week] = True
-    if run_load > 0 or run_time > 0 or run_distance > 0 or (description and not description_added[week]):
-        create_update_or_delete_event(start_date, run_load, run_time, run_distance, "Run", description if not description_added[week] else "", events)
-        description_added[week] = True
+    if run_load > 0 or run_time > 0 or run_distance > 0:
+        create_update_or_delete_event(start_date, run_load, run_time, run_distance, "Run", "", events)
     if swim_load == 0 and bike_load == 0 and run_load == 0 and swim_time == 0 and bike_time == 0 and run_time == 0 and swim_distance == 0 and bike_distance == 0 and run_distance == 0:
         if period:
-            create_update_or_delete_event(start_date, 0, 0, 0, "General", description, events)
+            create_update_or_delete_event(start_date, 0, 0, 0, default_activity_type, description, events)
         else:
             create_update_or_delete_event(start_date, 0, 0, 0, "Swim", "", events)
             create_update_or_delete_event(start_date, 0, 0, 0, "Ride", "", events)
