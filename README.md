@@ -1,6 +1,6 @@
 # ATP2intervals.icu
 
-This Python script automates the process of sending an annual training plan with weekly loads (for Bike, Run, and Swim) to intervals.icu. It reads data from an Excel file and updates or creates events in intervals.icu based on the provided load, time and distance targets.
+This Python script automates the process of sending an annual training plan with weekly loads (for Bike, Run, and Swim) to intervals.icu. It reads data from an Excel file and updates or creates events accordingly.
 
 ## Features
 
@@ -9,6 +9,9 @@ This Python script automates the process of sending an annual training plan with
 - **Delete Events**: If the load target is zero, the script deletes the corresponding event in intervals.icu.
 - **Efficient Data Handling**: The script retrieves all relevant events in a single API call to improve performance and reduce server load.
 - **Unit Conversion**: The script allows users to specify their unit preference (metric or imperial) for Bike and Run distances, while Swim distances remain in meters.
+- **Custom Descriptions**: The script now supports adding custom descriptions based on the 'period' and 'focus' columns from the Excel file.
+  - If 'period' is "Rest", the description will include "Stay in bed or on the beach!".
+  - If 'focus' has a value, the description will include "Focus this week on {focus}".
 
 ## Usage
 
