@@ -15,6 +15,13 @@ athlete_id = os.getenv('ATHLETE_ID', "athleteid")  # Replace this with your athl
 username = "API_KEY"  # This is always "API_KEY"
 api_key = os.getenv('API_KEY', "yourapikey")  # Replace this with your API key
 default_activity_type = os.getenv('DEFAULT_ACTIVITY_TYPE', "Bike")  # Default activity type
+unit_preference = os.getenv('UNIT_PREFERENCE', "metric")  # User preference for units, default to metric
+
+# Conversion factors
+CONVERSION_FACTORS = {
+    "metric": 1000,
+    "imperial": 1609.344
+}
 
 # API endpoints
 url_post = f"https://intervals.icu/api/v1/athlete/{athlete_id}/events"
@@ -26,6 +33,10 @@ def create_update_or_delete_event(start_date, load_target, time_target, distance
     load_target = load_target or 0
     time_target = time_target or 0
     distance_target = distance_target or 0
+
+    # Convert distance target based on unit preference for Bike and Run only
+    if activity_type in ["Ride", "Run"]:
+        distance_target *= CONVERSION_FACTORS[unit_preference]
 
     post_data = {
         "load_target": load_target,
