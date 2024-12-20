@@ -113,8 +113,13 @@ for index, row in df.iterrows():
     swim_time, bike_time, run_time = int(row['swim_time']), int(row['bike_time']), int(row['run_time'])
     swim_distance, bike_distance, run_distance = int(row['swim_distance']), int(row['bike_distance']), int(row['run_distance'])
     period = row['period'] if not pd.isna(row['period']) else ""
+    focus = row['focus'] if not pd.isna(row['focus']) else ""
     week = row['start_date_local'].isocalendar()[1]
     description = f"You are in the {period} period." if period else ""
+    if period == "Rest":
+        description += " Stay in bed or on the beach!"
+    if focus:
+        description += f" Focus this week on {focus}."
 
     if week not in description_added:
         description_added[week] = False
