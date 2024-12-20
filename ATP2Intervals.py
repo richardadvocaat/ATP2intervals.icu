@@ -121,10 +121,16 @@ for index, row in df.iterrows():
 
     if swim_load > 0 or swim_time > 0 or swim_distance > 0:
         create_update_or_delete_event(start_date, swim_load, swim_time, swim_distance, "Swim", "", events)
+    elif any([event['type'] == "Swim" for event in events if event['start_date_local'] == start_date]):
+        create_update_or_delete_event(start_date, swim_load, swim_time, swim_distance, "Swim", "", events)
     if bike_load > 0 or bike_time > 0 or bike_distance > 0 or (description and not description_added[week]):
         create_update_or_delete_event(start_date, bike_load, bike_time, bike_distance, "Ride", description, events)
         description_added[week] = True
+    elif any([event['type'] == "Ride" for event in events if event['start_date_local'] == start_date]):
+        create_update_or_delete_event(start_date, bike_load, bike_time, bike_distance, "Ride", description, events)
     if run_load > 0 or run_time > 0 or run_distance > 0:
+        create_update_or_delete_event(start_date, run_load, run_time, run_distance, "Run", "", events)
+    elif any([event['type'] == "Run" for event in events if event['start_date_local'] == start_date]):
         create_update_or_delete_event(start_date, run_load, run_time, run_distance, "Run", "", events)
     if swim_load == 0 and bike_load == 0 and run_load == 0 and swim_time == 0 and bike_time == 0 and run_time == 0 and swim_distance == 0 and bike_distance == 0 and run_distance == 0:
         if period:
