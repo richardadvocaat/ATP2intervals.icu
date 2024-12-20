@@ -34,7 +34,7 @@ def create_update_or_delete_event(start_date, load_target, time_target, distance
     time_target = time_target or 0
     distance_target = distance_target or 0
 
-    # Convert distance target based on unit preference for Bike and Run only
+    # Convert distance target based on unit preference for ride and Run only
     if activity_type in ["Ride", "Run"]:
         distance_target *= CONVERSION_FACTORS[unit_preference]
 
@@ -109,9 +109,9 @@ description_added = {}
 
 for index, row in df.iterrows():
     start_date = row['start_date_local'].strftime("%Y-%m-%dT00:00:00")
-    swim_load, bike_load, run_load = int(row['swim_load']), int(row['bike_load']), int(row['run_load'])
-    swim_time, bike_time, run_time = int(row['swim_time']), int(row['bike_time']), int(row['run_time'])
-    swim_distance, bike_distance, run_distance = int(row['swim_distance']), int(row['bike_distance']), int(row['run_distance'])
+    swim_load, ride_load, run_load = int(row['swim_load']), int(row['ride_load']), int(row['run_load'])
+    swim_time, ride_time, run_time = int(row['swim_time']), int(row['ride_time']), int(row['run_time'])
+    swim_distance, ride_distance, run_distance = int(row['swim_distance']), int(row['ride_distance']), int(row['run_distance'])
     period = row['period'] if not pd.isna(row['period']) else ""
     focus = row['focus'] if not pd.isna(row['focus']) else ""
     week = row['start_date_local'].isocalendar()[1]
@@ -128,16 +128,16 @@ for index, row in df.iterrows():
         create_update_or_delete_event(start_date, swim_load, swim_time, swim_distance, "Swim", "", events)
     elif any([event['type'] == "Swim" for event in events if event['start_date_local'] == start_date]):
         create_update_or_delete_event(start_date, swim_load, swim_time, swim_distance, "Swim", "", events)
-    if bike_load > 0 or bike_time > 0 or bike_distance > 0 or (description and not description_added[week]):
-        create_update_or_delete_event(start_date, bike_load, bike_time, bike_distance, "Ride", description, events)
+    if ride_load > 0 or ride_time > 0 or ride_distance > 0 or (description and not description_added[week]):
+        create_update_or_delete_event(start_date, ride_load, ride_time, ride_distance, "Ride", description, events)
         description_added[week] = True
     elif any([event['type'] == "Ride" for event in events if event['start_date_local'] == start_date]):
-        create_update_or_delete_event(start_date, bike_load, bike_time, bike_distance, "Ride", description, events)
+        create_update_or_delete_event(start_date, ride_load, ride_time, ride_distance, "Ride", description, events)
     if run_load > 0 or run_time > 0 or run_distance > 0:
         create_update_or_delete_event(start_date, run_load, run_time, run_distance, "Run", "", events)
     elif any([event['type'] == "Run" for event in events if event['start_date_local'] == start_date]):
         create_update_or_delete_event(start_date, run_load, run_time, run_distance, "Run", "", events)
-    if swim_load == 0 and bike_load == 0 and run_load == 0 and swim_time == 0 and bike_time == 0 and run_time == 0 and swim_distance == 0 and bike_distance == 0 and run_distance == 0:
+    if swim_load == 0 and ride_load == 0 and run_load == 0 and swim_time == 0 and ride_time == 0 and run_time == 0 and swim_distance == 0 and ride_distance == 0 and run_distance == 0:
         if period:
             create_update_or_delete_event(start_date, 0, 0, 0, default_activity_type, description, events)
         else:
