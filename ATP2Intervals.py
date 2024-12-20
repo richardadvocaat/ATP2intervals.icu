@@ -51,7 +51,7 @@ def create_update_or_delete_event(start_date, load_target, time_target, distance
 
     if duplicate_event:
         event_id = duplicate_event['id']
-        if load_target == 0 and time_target == 0 and distance_target == 0:
+        if load_target == 0 and time_target == 0 and distance_target == 0 and not description:
             url_delete_event = f"{url_delete}/{event_id}"
             response_delete = requests.delete(url_delete_event, headers=headers, auth=HTTPBasicAuth(username, api_key))
             logging.info(f"DELETE Response Status Code: {response_delete.status_code}")
@@ -137,9 +137,9 @@ for index, row in df.iterrows():
     swim_distance = int(row['swim_distance']) if not pd.isna(row['swim_distance']) else 0
     bike_distance = int(row['bike_distance']) if not pd.isna(row['bike_distance']) else 0
     run_distance = int(row['run_distance']) if not pd.isna(row['run_distance']) else 0
-    period = row['period']
+    period = row['period'] if not pd.isna(row['period']) else ""
     week = row['start_date_local'].isocalendar()[1]
-    description = f"You are in the {period} period."
+    description = f"You are in the {period} period." if period else ""
 
     if week not in description_added:
         description_added[week] = False
@@ -153,3 +153,7 @@ for index, row in df.iterrows():
     if run_load > 0 or run_time > 0 or run_distance > 0 or (description and not description_added[week]):
         create_update_or_delete_event(start_date, run_load, run_time, run_distance, "Run", description if not description_added[week] else "", events)
         description_added[week] = True
+    if swim_load == 0 and bike_load == 0 and run_load == 0 and swim_time == 0 and bike_time == 0 and run_time == 0 and swim_distance == 0 and bike_distance == 0 and run_distance == 0 and not description:
+        create_update_or_delete_event(start_date, 0, 0, 0, "Swim", "", events)
+        create_update_or_delete_event(start_date, 0, 0, 0, "Ride", "", events)
+        create_update_or_delete_event(start_date, 0, 0, 0, "Run", "", events)
