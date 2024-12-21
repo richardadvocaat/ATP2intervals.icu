@@ -119,6 +119,16 @@ description_added = {}
 def format_activity_name(activity):
     return ''.join(word.capitalize() for word in activity.split('_'))
 
+focus_columns = [
+    'Aerobic Endurance', 'Muscular force', 'Speed Skills',
+    'Muscular Endurance', 'Anaerobic Endurance', 'Sprint Power'
+]
+
+def format_focus_items(focus_items):
+    if len(focus_items) > 1:
+        return ', '.join(focus_items[:-1]) + ' and ' + focus_items[-1]
+    return ''.join(focus_items)
+
 for index, row in df.iterrows():
     start_date = row['start_date_local'].strftime("%Y-%m-%dT00:00:00")
     period = row['period'] if not pd.isna(row['period']) else ""
@@ -130,6 +140,22 @@ for index, row in df.iterrows():
     if focus:
         description += f" Focus this week on {focus}."
 
+    # Add focus based on specified columns
+    additional_focus = [col for col in focus_columns if str(row.get(col, '')).lower() == 'x']
+    if additional_focus:
+        formatted_focus = format_focus_items(additional_focus)
+        description += f" Focus on {formatted_focus}."
+    
+    # Add focus for A, B, and C category races
+    race_cat = str(row.get('cat', '')).upper()
+    race_name = row.get('race', '').strip()
+    if race_cat == 'A':
+        description += " A race: Focus on this race."
+    elif race_cat == 'B':
+        description += " B race: Use this race to learn and improve skills."
+    elif race_cat == 'C' and race_name:
+        description += f" Use {race_name} as hard effort training or just having fun!"
+    
     if week not in description_added:
         description_added[week] = False
 
