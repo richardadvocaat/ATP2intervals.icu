@@ -149,10 +149,10 @@ for index, row in df.iterrows():
     # Add focus for A, B, and C category races
     race_cat = str(row.get('cat', '')).upper()
     race_name = row.get('race', '').strip()
-    if race_cat == 'A':
-        description += " A race: Focus on this race."
-    elif race_cat == 'B':
-        description += " B race: Use this race to learn and improve skills."
+    if race_cat == 'A' and race_name:
+        description += f" {race_name} is an {race_cat}-event, so focus this week on this race."
+    elif race_cat == 'B' and race_name:
+        description += f" Use {race_name} to learn and improve skills."
     elif race_cat == 'C' and race_name:
         description += f" Use {race_name} as hard effort training or just having fun!"
     
