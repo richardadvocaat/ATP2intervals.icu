@@ -116,6 +116,9 @@ events = response_get.json() if response_get.status_code == 200 else []
 # Track if description has been added for the week
 description_added = {}
 
+def format_activity_name(activity):
+    return ''.join(word.capitalize() for word in activity.split('_'))
+
 for index, row in df.iterrows():
     start_date = row['start_date_local'].strftime("%Y-%m-%dT00:00:00")
     period = row['period'] if not pd.isna(row['period']) else ""
@@ -132,10 +135,10 @@ for index, row in df.iterrows():
 
     for col in df.columns:
         if col.endswith('_load'):
-            activity = col.split('_')[0].capitalize()
+            activity = format_activity_name(col.split('_load')[0])
             load = int(row[col])
-            time_col = f"{activity.lower()}_time"
-            distance_col = f"{activity.lower()}_distance"
+            time_col = f"{col.split('_load')[0]}_time"
+            distance_col = f"{col.split('_load')[0]}_distance"
             time = int(row[time_col]) if time_col in row else 0
             distance = int(row[distance_col]) if distance_col in row else 0
 
@@ -152,5 +155,5 @@ for index, row in df.iterrows():
         else:
             for col in df.columns:
                 if col.endswith('_load'):
-                    activity = col.split('_')[0].capitalize()
+                    activity = format_activity_name(col.split('_load')[0])
                     create_update_or_delete_event(start_date, 0, 0, 0, activity, "", events)
