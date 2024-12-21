@@ -8,15 +8,23 @@ from datetime import datetime
 # Configure logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
+# Function to read user data from USERDATA.xlsx file
+def read_user_data(excel_file_path, sheet_name="userdata"):
+    df = pd.read_excel(excel_file_path, sheet_name=sheet_name)
+    user_data = df.set_index('Key').to_dict()['Value']
+    return user_data
+
+# Read user data from USERDATA.xlsx file
+user_data = read_user_data(r'C:\Temp\USERDATA.xlsx')
+excel_file_path = user_data.get('EXCEL_FILE_PATH', r"C:\TEMP\ATP.xlsx")
+api_key = user_data.get('API_KEY', "yourapikey")
+username = user_data.get('USERNAME', "API_KEY")
+athlete_id = user_data.get('ATHLETE_ID', "athleteid")
+
 # User variables
-excel_file_path = os.getenv('EXCEL_FILE_PATH', r"C:\TEMP\ATP.xlsx")  # Replace this with the location of your Excel file
 sheet_name = os.getenv('SHEET_NAME', "ATP")  # Replace this with the name of the sheet
-athlete_id = os.getenv('ATHLETE_ID', "athleteid")  # Replace this with your athlete_id
-username = "API_KEY"  # This is always "API_KEY"
-api_key = os.getenv('API_KEY', "yourapikey")  # Replace this with your API key
 default_activity_type = os.getenv('DEFAULT_ACTIVITY_TYPE', "Bike")  # Default activity type
 unit_preference = os.getenv('UNIT_PREFERENCE', "metric")  # User preference for units, default to metric
-
 
 # Conversion factors
 CONVERSION_FACTORS = {
@@ -35,7 +43,7 @@ def create_update_or_delete_event(start_date, load_target, time_target, distance
     time_target = time_target or 0
     distance_target = distance_target or 0
 
-    # Convert distance target based on unit preference for ride and Run only
+    # Convert distance target based on unit preference for Ride and Run only
     if activity_type in ["Ride", "Run"]:
         distance_target *= CONVERSION_FACTORS[unit_preference]
 
