@@ -118,9 +118,6 @@ description_added = {}
 
 for index, row in df.iterrows():
     start_date = row['start_date_local'].strftime("%Y-%m-%dT00:00:00")
-    swim_load, ride_load, run_load = int(row['swim_load']), int(row['ride_load']), int(row['run_load'])
-    swim_time, ride_time, run_time = int(row['swim_time']), int(row['ride_time']), int(row['run_time'])
-    swim_distance, ride_distance, run_distance = int(row['swim_distance']), int(row['ride_distance']), int(row['run_distance'])
     period = row['period'] if not pd.isna(row['period']) else ""
     focus = row['focus'] if not pd.isna(row['focus']) else ""
     week = row['start_date_local'].isocalendar()[1]
@@ -133,23 +130,27 @@ for index, row in df.iterrows():
     if week not in description_added:
         description_added[week] = False
 
-    if swim_load > 0 or swim_time > 0 or swim_distance > 0:
-        create_update_or_delete_event(start_date, swim_load, swim_time, swim_distance, "Swim", "", events)
-    elif any([event['type'] == "Swim" for event in events if event['start_date_local'] == start_date]):
-        create_update_or_delete_event(start_date, swim_load, swim_time, swim_distance, "Swim", "", events)
-    if ride_load > 0 or ride_time > 0 or ride_distance > 0 or (description and not description_added[week]):
-        create_update_or_delete_event(start_date, ride_load, ride_time, ride_distance, "Ride", description, events)
-        description_added[week] = True
-    elif any([event['type'] == "Ride" for event in events if event['start_date_local'] == start_date]):
-        create_update_or_delete_event(start_date, ride_load, ride_time, ride_distance, "Ride", description, events)
-    if run_load > 0 or run_time > 0 or run_distance > 0:
-        create_update_or_delete_event(start_date, run_load, run_time, run_distance, "Run", "", events)
-    elif any([event['type'] == "Run" for event in events if event['start_date_local'] == start_date]):
-        create_update_or_delete_event(start_date, run_load, run_time, run_distance, "Run", "", events)
-    if swim_load == 0 and ride_load == 0 and run_load == 0 and swim_time == 0 and ride_time == 0 and run_time == 0 and swim_distance == 0 and ride_distance == 0 and run_distance == 0:
+    for col in df.columns:
+        if col.endswith('_load'):
+            activity = col.split('_')[0].capitalize()
+            load = int(row[col])
+            time_col = f"{activity.lower()}_time"
+            distance_col = f"{activity.lower()}_distance"
+            time = int(row[time_col]) if time_col in row else 0
+            distance = int(row[distance_col]) if distance_col in row else 0
+
+            if load > 0 or time > 0 or distance > 0:
+                create_update_or_delete_event(start_date, load, time, distance, activity, description if activity == "Ride" and not description_added[week] else "", events)
+                if activity == "Ride" and not description_added[week]:
+                    description_added[week] = True
+            elif any([event['type'] == activity for event in events if event['start_date_local'] == start_date]):
+                create_update_or_delete_event(start_date, load, time, distance, activity, "", events)
+
+    if all(row[col] == 0 for col in df.columns if col.endswith('_load')) and all(row[col] == 0 for col in df.columns if col.endswith('_time')) and all(row[col] == 0 for col in df.columns if col.endswith('_distance')):
         if period:
             create_update_or_delete_event(start_date, 0, 0, 0, default_activity_type, description, events)
         else:
-            create_update_or_delete_event(start_date, 0, 0, 0, "Swim", "", events)
-            create_update_or_delete_event(start_date, 0, 0, 0, "Ride", "", events)
-            create_update_or_delete_event(start_date, 0, 0, 0, "Run", "", events)
+            for col in df.columns:
+                if col.endswith('_load'):
+                    activity = col.split('_')[0].capitalize()
+                    create_update_or_delete_event(start_date, 0, 0, 0, activity, "", events)
