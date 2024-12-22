@@ -1,6 +1,8 @@
 # ATP2intervals.icu
 
-This Python script automates the process of sending an annual training plan with weekly loads (for Bike, Run, and Swim) to intervals.icu. It reads data from an Excel file and updates or creates events accordingly.
+This Python script automates the process of sending an annual training plan with weekly loads (for multiple sports) to intervals.icu. It reads data from an Excel file and updates or creates events accordingly.
+The tab in excel file used for this sript can be integraded in the sheets for planning a Annual Trainingsplan (https://drive.google.com/drive/folders/1WhIOf2XkGiZBEN_7tX2PSShmF-QXBnBF).
+
 
 ## Features
 
