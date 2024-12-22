@@ -128,17 +128,20 @@ def format_focus_items(focus_items):
     if len(focus_items) > 1:
         return ', '.join(focus_items[:-1]) + ' and ' + focus_items[-1]
     return ''.join(focus_items)
-
+                
 for index, row in df.iterrows():
     start_date = row['start_date_local'].strftime("%Y-%m-%dT00:00:00")
     period = row['period'] if not pd.isna(row['period']) else ""
     focus = row['focus'] if not pd.isna(row['focus']) else ""
+    test = row['test'] if not pd.isna(row['test']) else ""  # Added test column
     week = row['start_date_local'].isocalendar()[1]
     description = f"You are in the {period} period." if period else ""
     if period == "Rest":
         description += " Stay in bed or on the beach!"
     if focus:
         description += f" Focus this week on {focus}."
+    if test:  # Add test comment if there is a value
+        description += f" Take a {test} this week."
 
     # Add focus based on specified columns
     additional_focus = [col for col in focus_columns if str(row.get(col, '')).lower() == 'x']
@@ -155,7 +158,7 @@ for index, row in df.iterrows():
         description += f" Use {race_name} to learn and improve skills."
     elif race_cat == 'C' and race_name:
         description += f" Use {race_name} as hard effort training or just having fun!"
-    
+
     if week not in description_added:
         description_added[week] = False
 
