@@ -28,6 +28,7 @@ sheet_name = os.getenv('SHEET_NAME', "ATP")  # Replace this with the name of the
 default_activity_type = os.getenv('DEFAULT_ACTIVITY_TYPE', "Bike")  # Default activity type
 unit_preference = os.getenv('UNIT_PREFERENCE', "metric")  # User preference for units, default to metric
 note_color = "red"
+whattodowithrest = "Stay in bed or on the beach!"
 
 # Conversion factors
 CONVERSION_FACTORS = {
@@ -166,7 +167,7 @@ focus_columns = [
     'Muscular Endurance', 'Anaerobic Endurance', 'Sprint Power'
 ]
 
-def format_focus_items(focus_items):
+def format_focus_items_target(focus_items):
     if len(focus_items) > 1:
         return ', '.join(focus_items[:-1]) + ' and ' + focus_items[-1]
     return ''.join(focus_items)
@@ -180,7 +181,8 @@ for index, row in df.iterrows():
     week = row['start_date_local'].isocalendar()[1]
     description = f"You are in the {period} period.\n\n" if period else ""
     if period == "Rest":
-        description += "Stay in bed or on the beach!\n\n"
+        description += f"{whattodowithrest}\n\n"  
+        #"Stay in bed or on the beach!\n\n"
     if test:  # Add test comment if there is a value
         description += f"Do the following test(s) this week: **{test}**.\n\n"
     if focus:
@@ -189,18 +191,18 @@ for index, row in df.iterrows():
     # Add focus based on specified columns
     additional_focus = [col for col in focus_columns if str(row.get(col, '')).lower() == 'x']
     if additional_focus:
-        formatted_focus = format_focus_items(additional_focus)
+        formatted_focus = format_focus_items_target(additional_focus)
         description += f"Focus on {formatted_focus}.\n\n"
     
     # Add focus for A, B, and C category races
     race_cat = str(row.get('cat', '')).upper()
     race_name = row.get('race', '').strip()
     if race_cat == 'A' and race_name:
-        description += f"Use the **{race_name}** as an {race_cat}-event to primarily focus this week on this race."
+        description += f"Use the {race_name} as an {race_cat}-event to primarily focus this week on this race."
     elif race_cat == 'B' and race_name:
-        description += f"Use the **{race_name}** to learn and improve skills."
+        description += f"Use the {race_name} to learn and improve skills."
     elif race_cat == 'C' and race_name:
-        description += f"Use the **{race_name}** as hard effort training or just having fun!"
+        description += f"Use the {race_name} as hard effort training or just having fun!"
 
     if week not in description_added:
         description_added[week] = False
@@ -222,15 +224,20 @@ for index, row in df.iterrows():
                 create_update_or_delete_target_event(start_date, load, time, distance, activity, "", events)
 
 # Then handle NOTE events
+def format_focus_items_notes(focus_items_notes):
+    if len(focus_items_notes) > 1:
+        return ', '.join(focus_items_notes[:-1]) + ' and ' + focus_items_notes[-1]
+    return ''.join(focus_items_notes)
+
 for index, row in df.iterrows():
     start_date = row['start_date_local'].strftime("%Y-%m-%dT00:00:00")
     period = row['period'] if not pd.isna(row['period']) else ""
     focus = row['focus'] if not pd.isna(row['focus']) else ""
     test = row['test'] if not pd.isna(row['test']) else ""  # Added test column
     week = row['start_date_local'].isocalendar()[1]
-    description = f"You are in the {period} period.\n\n" if period else ""
+    description = f"You are in the **{period}** period.\n\n" if period else ""
     if period == "Rest":
-        description += "Stay in bed or on the beach!\n\n"
+        description += f"{whattodowithrest}\n\n"
     if test:  # Add test comment if there is a value
         description += f"Do the following test(s) this week: **{test}**.\n\n"
     if focus:
@@ -239,28 +246,22 @@ for index, row in df.iterrows():
     # Add focus based on specified columns
     additional_focus = [col for col in focus_columns if str(row.get(col, '')).lower() == 'x']
     if additional_focus:
-        formatted_focus = format_focus_items(additional_focus)
+        formatted_focus = format_focus_items_notes(additional_focus)
         description += f"Focus on {formatted_focus}.\n\n"
     
     # Add focus for A, B, and C category races
     race_cat = str(row.get('cat', '')).upper()
-    race_name = row.get('race', '').strip()
+    race_name = row.get('race', '')
     if race_cat == 'A' and race_name:
         description += f"Use the **{race_name}** as an {race_cat}-event to primarily focus this week on this race."
     elif race_cat == 'B' and race_name:
         description += f"Use the **{race_name}** to learn and improve skills."
     elif race_cat == 'C' and race_name:
-        description += f"Use the **{race_name}** as hard effort training or just having fun!"
+        description += f"Use the **{race_name}** as an hard effort training or just having fun!"
 
     if week not in description_added:
         description_added[week] = False
 
-    # Handle NOTE events
-    if all(row[col] == 0 for col in df.columns if col.endswith('_load')) and all(row[col] == 0 for col in df.columns if col.endswith('_time')) and all(row[col] == 0 for col in df.columns if col.endswith('_distance')):
-        if period:
-            create_update_or_delete_note_event(start_date, description, events)
-        else:
-            for col in df.columns:
-                if col.endswith('_load'):
-                    activity = format_activity_name(col.split('_load')[0])
-                    create_update_or_delete_note_event(start_date, "", events)
+    if not description_added[week]:
+        create_update_or_delete_note_event(start_date, description, events)
+        description_added[week] = True
