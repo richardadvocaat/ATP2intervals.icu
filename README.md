@@ -16,6 +16,6 @@ This Python script automates the process of sending an annual training plan with
 
 ## Usage
 
-1. **Setup**: Ensure you have the required Python libraries installed (`pandas`, `requests`).
+1. **Setup**: Ensure you have the required Python libraries installed (`logging`, `os`, `datetime`, `pandas`, `requests`).  
 2. **Configuration**: Update the user variables at the top of the script with your Excel file path, sheet name, athlete ID, API key, and preferred unit system (metric or imperial).
 3. **Run**: Execute the script to sync your training plan with intervals.icu.
