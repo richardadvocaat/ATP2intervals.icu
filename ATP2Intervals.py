@@ -112,31 +112,46 @@ for index, row in df.iterrows():
     focus = row['focus'] if not pd.isna(row['focus']) else ""
     test = row['test'] if not pd.isna(row['test']) else ""  # Added test column
     week = row['start_date_local'].isocalendar()[1]
-    description = f"You are in the **{period}** period of your trainingplan.\n\n" if period else ""
+    description = f"- You are in the **{period}** period of your trainingplan.\n\n" if period else ""
     if period == "Rest":
-        description += f"{whattodowithrest}\n\n"
+        description += f"- {whattodowithrest}\n\n"
     if test:  # Add test comment if there is a value
-        description += f"Do the following test(s) this week: **{test}**.\n\n"
+        description += f"- Do the following test(s) this week: **{test}**.\n\n"
     if focus:
-        description += f"Focus this week on {focus}.\n\n"
+        description += f"- Focus this week on {focus}.\n\n"
     
     # Add focus based on specified columns
     additional_focus = [col for col in focus_columns if str(row.get(col, '')).lower() == 'x']
     if additional_focus:
         formatted_focus = format_focus_items_notes(additional_focus)
-        description += f"Focus on {formatted_focus}.\n\n"
+        description += f"- Focus on {formatted_focus}.\n\n"
     elif description.strip():
-        description += "You don't have to focus on specific workouts this week.\n\n"
+        description += "- You don't have to focus on specific workouts this week.\n\n"
     
     # Add focus for A, B, and C category races
     race_cat = str(row.get('cat', '')).upper()
     race_name = row.get('race', '')
     if race_cat == 'A' and race_name:
-        description += f"Use the **{race_name}** as an {race_cat}-event to primarily focus this week on this race."
+        description += f"- Use the **{race_name}** as an {race_cat}-event to primarily focus this week on this race.\n\n"
     elif race_cat == 'B' and race_name:
-        description += f"Use the **{race_name}** to learn and improve skills."
+        description += f"- Use the **{race_name}** to learn and improve skills.\n\n"
     elif race_cat == 'C' and race_name:
-        description += f"Use the **{race_name}** as hard effort training or just having fun!"
+        description += f"- Use the **{race_name}** as an hard effort training or just having fun!\n\n"
+    
+    # Add extra data about the next race
+    next_race = None
+    for i in range(index + 2, len(df)):
+        next_race_name = df.at[i, 'race']
+        if next_race_name and next_race_name not in ['-', '0', 'None']:
+            next_race = df.iloc[i]
+            break
+    if next_race is not None:
+        next_race_date = next_race['start_date_local'].strftime("%Y-%m-%dT00:00:00")
+        next_race_cat = str(next_race.get('cat', '')).upper()
+        next_race_name = next_race.get('race', '')
+        next_race_week = next_race['start_date_local'].isocalendar()[1]
+        weeks_to_go = next_race_week - week
+        description += f"- Next race: {next_race_name} (a **{next_race_cat}**-event) within {weeks_to_go} weeks.\n\n "
 
     if week not in description_added:
         description_added[week] = False
