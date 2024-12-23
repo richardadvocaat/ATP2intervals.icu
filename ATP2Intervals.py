@@ -141,7 +141,7 @@ for index, row in df.iterrows():
     if focus:
         description += f" Focus this week on {focus}."
     if test:  # Add test comment if there is a value
-        description += f" Take a {test} this week."
+        description += f" Do the following test(s) this week: {test}."
 
     # Add focus based on specified columns
     additional_focus = [col for col in focus_columns if str(row.get(col, '')).lower() == 'x']
@@ -153,11 +153,11 @@ for index, row in df.iterrows():
     race_cat = str(row.get('cat', '')).upper()
     race_name = row.get('race', '').strip()
     if race_cat == 'A' and race_name:
-        description += f" {race_name} is an {race_cat}-event, so focus this week on this race."
+        description += f" The {race_name} is an {race_cat}-event, so primarialy focus this week on this race."
     elif race_cat == 'B' and race_name:
-        description += f" Use {race_name} to learn and improve skills."
+        description += f" Use the {race_name} to learn and improve skills."
     elif race_cat == 'C' and race_name:
-        description += f" Use {race_name} as hard effort training or just having fun!"
+        description += f" Use the {race_name} as hard effort training or just having fun!"
 
     if week not in description_added:
         description_added[week] = False
