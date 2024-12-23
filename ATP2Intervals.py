@@ -33,7 +33,7 @@ url_get = f"https://intervals.icu/api/v1/athlete/{athlete_id}/eventsjson"
 url_delete = f"https://intervals.icu/api/v1/athlete/{athlete_id}/events"
 headers = {"Content-Type": "application/json"}
 
-def create_update_or_delete_note_event(start_date, description, events):
+def create_update_or_delete_note_event(start_date, description, color, events):
     if not description.strip():
         logging.info(f"No description provided for {start_date}. Skipping note creation.")
         return
@@ -50,17 +50,18 @@ def create_update_or_delete_note_event(start_date, description, events):
         "show_as_note": "false",
         "show_on_ctl_line": "false",
         "athlete_cannot_edit": "false",
-        "color": note_color
+        "color": note_color  # Use the dynamic color
     }
 
     duplicate_event = next((event for event in events if event['category'] == "NOTE" and event['name'] == post_data['name'] and event['start_date_local'] == post_data['start_date_local']), None)
     
     if duplicate_event:
         event_id = duplicate_event['id']
-        if duplicate_event.get('description') != description:
+        if duplicate_event.get('description') != description or duplicate_event.get('color') != note_color:
             url_put = f"https://intervals.icu/api/v1/athlete/{athlete_id}/events/{event_id}"
             put_data = {
-                "description": description
+                "description": description,
+                "color": note_color  # Update the color if it has changed
             }
             logging.info(f"Updating event: ID={event_id}, Data={put_data}")
             response_put = requests.put(url_put, headers=headers, json=put_data, auth=HTTPBasicAuth(username, api_key))
@@ -139,7 +140,7 @@ for index, row in df.iterrows():
 
     if week not in description_added:
         description_added[week] = False
-
+        
     if description.strip() and not description_added[week]:
-        create_update_or_delete_note_event(start_date, description, events)
+        create_update_or_delete_note_event(start_date, description, note_color, events)
         description_added[week] = True
