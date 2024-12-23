@@ -1,21 +1,23 @@
 # ATP2intervals.icu
 
-This Python script automates the process of sending an annual training plan with weekly loads (for multiple sports) to intervals.icu. It reads data from an Excel file and updates or creates events accordingly. The tab in the Excel file used for this script can be integrated into the sheets for planning an Annual Training Plan that can be found here: https://drive.google.com/drive/folders/1WhIOf2XkGiZBEN_7tX2PSShmF-QXBnBF
-
+This Python script automates the process of sending an annual training plan with weekly loads (for multiple sports) to intervals.icu. It reads data from an Excel file and updates or creates events accordingly.
 
 ## Features
 
-- **Read Excel File**: The script reads an Excel file containing weekly load, time and distance targets for different activities (Bike, Run, Swim).
-- **Create or Update Events**: It creates new events or updates existing ones in intervals.icu based on the load targets.
-- **Delete Events**: If the load target is zero, the script deletes the corresponding event in intervals.icu.
-- **Efficient Data Handling**: The script retrieves all relevant events in a single API call to improve performance and reduce server load.
-- **Unit Conversion**: The script allows users to specify their unit preference (metric or imperial) for Bike and Run distances, while Swim distances remain in meters.
-- **Custom Descriptions**: The script now supports adding custom descriptions based on the 'period' and 'focus' columns from the Excel file.
+- **Read Excel File**: Reads an Excel file containing weekly load, time, and distance targets for different activities (Bike, Run, Swim).
+- **Create or Update Events**: Creates new events or updates existing ones in intervals.icu based on load targets.
+- **Delete Events**: Deletes corresponding events in intervals.icu if the load target is zero.
+- **Efficient Data Handling**: Retrieves all relevant events in a single API call to improve performance and reduce server load.
+- **Unit Conversion**: Allows users to specify their unit preference (metric or imperial) for Bike and Run distances, while Swim distances remain in meters.
+- **Custom Descriptions**: Adds custom descriptions based on the 'period' and 'focus' columns from the Excel file.
   - If 'period' is "Rest", the description will include "Stay in bed or on the beach!".
   - If 'focus' has a value, the description will include "Focus this week on {focus}".
+- **Test Column**: Adds comments for tests specified in the 'test' column.
+- **Focus Columns**: Adds focus based on specified focus columns like Aerobic Endurance, Muscular Force, etc.
+- **Race Categories**: Adds focus for A, B, and C category races with custom descriptions.
 
 ## Usage
 
-1. **Setup**: Ensure you have the required Python libraries installed (`logging`, `os`, `datetime`, `pandas`, `requests`).  
+1. **Setup**: Ensure you have the required Python libraries installed (`logging`, `os`, `datetime`, `pandas`, `requests`).
 2. **Configuration**: Update the user variables at the top of the script with your Excel file path, sheet name, athlete ID, API key, and preferred unit system (metric or imperial).
 3. **Run**: Execute the script to sync your training plan with intervals.icu.
