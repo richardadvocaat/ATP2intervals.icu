@@ -3,7 +3,6 @@ import os
 import pandas as pd
 import requests
 from requests.auth import HTTPBasicAuth
-#from datetime import datetime
 
 # Configure logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
@@ -18,8 +17,8 @@ def read_user_data(excel_file_path, sheet_name="userdata"):
     return user_data
 
 # Read user data from USERDATA.xlsx file
-user_data = read_user_data(r'C:\Temp\USERDATA.xlsx')
-excel_file_path = user_data.get('EXCEL_FILE_PATH', r"C:\TEMP\ATP.xlsx")
+user_data = read_user_data(r'C:\\Temp\\USERDATA.xlsx')
+excel_file_path = user_data.get('EXCEL_FILE_PATH', r"C:\\TEMP\\ATP.xlsx")
 api_key = user_data.get('API_KEY', "yourapikey")
 username = user_data.get('USERNAME', "API_KEY")
 athlete_id = user_data.get('ATHLETE_ID', "athleteid")
@@ -83,9 +82,6 @@ def create_update_or_delete_note_event(start_date, description, events):
             logging.info(f"New event created on {start_date}!")
         else:
             logging.error(f"Error creating event on {start_date}: {response_post.status_code}")
-
-# Add this function definition to ATP2Intervals.py
-
 
 def create_update_or_delete_target_event(start_date, load_target, time_target, distance_target, activity_type, description, events):
     load_target = load_target or 0
