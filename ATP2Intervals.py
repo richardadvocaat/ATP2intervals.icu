@@ -3,7 +3,6 @@ import os
 import pandas as pd
 import requests
 from requests.auth import HTTPBasicAuth
-#from datetime import datetime
 
 # Configure logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
@@ -85,10 +84,7 @@ def create_update_or_delete_note_event(start_date, description, events):
         else:
             logging.error(f"Error creating event on {start_date}: {response_post.status_code}")
 
-# Add this function definition to ATP2Intervals.py
-
-
-def create_update_or_delete_target_event(start_date, load_target, time_target, distance_target, activity_type, description, events):
+def create_update_or_delete_target_event(start_date, load_target, time_target, distance_target, activity_type, events):
     load_target = load_target or 0
     time_target = time_target or 0
     distance_target = distance_target or 0
@@ -104,8 +100,7 @@ def create_update_or_delete_target_event(start_date, load_target, time_target, d
         "category": "TARGET",
         "type": activity_type,
         "name": "Weekly",
-        "start_date_local": start_date,
-        "description": description
+        "start_date_local": start_date
     }
 
     duplicate_event = next((event for event in events if event['category'] == "TARGET" and event['name'] == post_data['name'] and event['start_date_local'] == post_data['start_date_local'] and event['type'] == activity_type), None)
@@ -116,7 +111,7 @@ def create_update_or_delete_target_event(start_date, load_target, time_target, d
         server_time_target = duplicate_event.get('time_target', 0) or 0
         server_distance_target = duplicate_event.get('distance_target', 0) or 0
 
-        if load_target == 0 and time_target == 0 and distance_target == 0 and not description:
+        if load_target == 0 and time_target == 0 and distance_target == 0:
             url_delete_event = f"{url_delete}/{event_id}"
             response_delete = requests.delete(url_delete_event, headers=headers, auth=HTTPBasicAuth(username, api_key))
             logging.info(f"DELETE Response Status Code: {response_delete.status_code}")
@@ -124,13 +119,12 @@ def create_update_or_delete_target_event(start_date, load_target, time_target, d
                 logging.info(f"Event deleted for {activity_type} on {start_date}!")
             else:
                 logging.error(f"Error deleting event for {activity_type} on {start_date}: {response_delete.status_code}")
-        elif (server_load_target != load_target or server_time_target != time_target or server_distance_target != distance_target or duplicate_event.get('description') != description):
+        elif server_load_target != load_target or server_time_target != time_target or server_distance_target != distance_target:
             url_put = f"https://intervals.icu/api/v1/athlete/{athlete_id}/events/{event_id}"
             put_data = {
                 "load_target": load_target,
                 "time_target": time_target,
-                "distance_target": distance_target,
-                "description": description
+                "distance_target": distance_target
             }
             logging.info(f"Updating event: ID={event_id}, Data={put_data}")
             response_put = requests.put(url_put, headers=headers, json=put_data, auth=HTTPBasicAuth(username, api_key))
@@ -142,7 +136,7 @@ def create_update_or_delete_target_event(start_date, load_target, time_target, d
         else:
             logging.info(f"No changes needed for {activity_type} on {start_date}.")
     else:
-        if load_target > 0 or time_target > 0 or distance_target > 0 or description:
+        if load_target > 0 or time_target > 0 or distance_target > 0:
             logging.info(f"New event: Data={post_data}")
             response_post = requests.post(url_post, headers=headers, json=post_data, auth=HTTPBasicAuth(username, api_key))
             if response_post.status_code == 200:
@@ -176,14 +170,16 @@ def format_focus_items(focus_items):
         return ', '.join(focus_items[:-1]) + ' and ' + focus_items[-1]
     return ''.join(focus_items)
 
-# First handle all TARGET events
+# First handle all TARGET events and consolidate NOTE events data
+weekly_notes = {}
+
 for index, row in df.iterrows():
     start_date = row['start_date_local'].strftime("%Y-%m-%dT00:00:00")
     period = row['period'] if not pd.isna(row['period']) else ""
     focus = row['focus'] if not pd.isna(row['focus']) else ""
     test = row['test'] if not pd.isna(row['test']) else ""  # Added test column
     week = row['start_date_local'].isocalendar()[1]
-    description = f"You are in the {period} period.\n\n" if period else ""
+    description = f"You are in the **{period}** period.\n\n" if period else ""
     if period == "Rest":
         description += whattodowithrest
     if test:  # Add test comment if there is a value
@@ -191,12 +187,7 @@ for index, row in df.iterrows():
     if focus:
         description += f"Focus this week on {focus}.\n\n"
     
-    # Add focus based on specified columns
-    additional_focus = [col for col in focus_columns if str(row.get(col, '')).lower() == 'x']
-    if additional_focus:
-        formatted_focus = format_focus_items(additional_focus)
-        description += f"Focus on {formatted_focus}.\n\n"
-    
+  
     # Add focus for A, B, and C category races
     race_cat = str(row.get('cat', '')).upper()
     race_name = row.get('race', '').strip()
@@ -220,52 +211,19 @@ for index, row in df.iterrows():
             distance = int(row[distance_col]) if distance_col in row else 0
 
             if load > 0 or time > 0 or distance > 0:
-                create_update_or_delete_target_event(start_date, load, time, distance, activity, description if activity == "Ride" and not description_added[week] else "", events)
+                create_update_or_delete_target_event(start_date, load, time, distance, activity, events)
                 if activity == "Ride" and not description_added[week]:
                     description_added[week] = True
             elif any([event['type'] == activity for event in events if event['start_date_local'] == start_date]):
                 create_update_or_delete_target_event(start_date, load, time, distance, activity, "", events)
 
-# Then handle NOTE events
-for index, row in df.iterrows():
-    start_date = row['start_date_local'].strftime("%Y-%m-%dT00:00:00")
-    period = row['period'] if not pd.isna(row['period']) else ""
-    focus = row['focus'] if not pd.isna(row['focus']) else ""
-    test = row['test'] if not pd.isna(row['test']) else ""  # Added test column
-    week = row['start_date_local'].isocalendar()[1]
-    description = f"You are in the {period} period.\n\n" if period else ""
-    if period == "Rest":
-        description += whattodowithrest
-    if test:  # Add test comment if there is a value
-        description += f"Do the following test(s) this week: **{test}**.\n\n"
-    if focus:
-        description += f"Focus this week on {focus}.\n\n"
-    
-    # Add focus based on specified columns
-    additional_focus = [col for col in focus_columns if str(row.get(col, '')).lower() == 'x']
-    if additional_focus:
-        formatted_focus = format_focus_items(additional_focus)
-        description += f"Focus on {formatted_focus}.\n\n"
-    
-    # Add focus for A, B, and C category races
-    race_cat = str(row.get('cat', '')).upper()
-    race_name = row.get('race', '').strip()
-    if race_cat == 'A' and race_name:
-        description += f"Use the **{race_name}** as an {race_cat}-event to primarily focus this week on this race."
-    elif race_cat == 'B' and race_name:
-        description += f"Use the **{race_name}** to learn and improve skills."
-    elif race_cat == 'C' and race_name:
-        description += f"Use the **{race_name}** as hard effort training or just having fun!"
+    # Consolidate NOTE events data
+    if week not in weekly_notes:
+        weekly_notes[week] = description
+    else:
+        weekly_notes[week] += description
 
-    if week not in description_added:
-        description_added[week] = False
-
-    # Handle NOTE events
-    if all(row[col] == 0 for col in df.columns if col.endswith('_load')) and all(row[col] == 0 for col in df.columns if col.endswith('_time')) and all(row[col] == 0 for col in df.columns if col.endswith('_distance')):
-        if period:
-            create_update_or_delete_note_event(start_date, description, events)
-        else:
-            for col in df.columns:
-                if col.endswith('_load'):
-                    activity = format_activity_name(col.split('_load')[0])
-                    create_update_or_delete_note_event(start_date, "", events)
+# Create or update NOTE events based on consolidated data
+for week, description in weekly_notes.items():
+    week_start_date = df[df['start_date_local'].dt.isocalendar().week == week]['start_date_local'].min().strftime("%Y-%m-%dT00:00:00")
+    create_update_or_delete_note_event(week_start_date, description, events)
