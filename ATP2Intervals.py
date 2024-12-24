@@ -42,7 +42,28 @@ url_get = f"https://intervals.icu/api/v1/athlete/{athlete_id}/eventsjson"
 url_delete = f"https://intervals.icu/api/v1/athlete/{athlete_id}/events"
 headers = {"Content-Type": "application/json"}
 
+def delete_target_events(oldest_date, newest_date):
+    # Retrieve existing events within the date range
+    params = {"oldest": oldest_date, "newest": newest_date, "category": "TARGET"}
+    response_get = requests.get(url_get, headers=headers, params=params, auth=HTTPBasicAuth(username, api_key))
+    events = response_get.json() if response_get.status_code == 200 else []
+
+    # Delete TARGET events within the date range
+    for event in events:
+        if event['category'] == "TARGET":
+            event_id = event['id']
+            url_del = f"https://intervals.icu/api/v1/athlete/{athlete_id}/events/{event_id}"
+            response_del = requests.delete(url_del, headers=headers, auth=HTTPBasicAuth(username, api_key))
+            if response_del.status_code == 200:
+                logging.info(f"Deleted target event ID={event_id}")
+            else:
+                logging.error(f"Error deleting target event ID={event_id}: {response_del.status_code}")
+
 def create_update_or_delete_target_event(start_date, load_target, time_target, distance_target, activity_type, events):
+    if load_target is None or load_target == 0:
+        logging.info(f"Skipping {activity_type} event on {start_date} due to None or 0 load target.")
+        return
+
     load_target = load_target or 0
     time_target = time_target or 0
     distance_target = distance_target or 0
@@ -94,8 +115,7 @@ def create_update_or_delete_target_event(start_date, load_target, time_target, d
                 logging.info(f"New event created for {activity_type} on {start_date}!")
             else:
                 logging.error(f"Error creating event for {activity_type} on {start_date}: {response_post.status_code}")
-                
-            time_module.sleep(1)  # Add a 100ms delay between each add event
+            time_module.sleep(0.1)  # Add a 100ms delay between each add event
 
 # Read the Excel file and specify the sheet
 df = pd.read_excel(excel_file_path, sheet_name=sheet_name)
@@ -104,6 +124,9 @@ df.fillna(0, inplace=True)
 # Get the oldest and newest date from the Excel list
 oldest_date = df['start_date_local'].min().strftime("%Y-%m-%dT00:00:00")
 newest_date = df['start_date_local'].max().strftime("%Y-%m-%dT00:00:00")
+
+# Delete existing TARGET events in the date range
+delete_target_events(oldest_date, newest_date)
 
 # Retrieve existing events
 params = {"oldest": oldest_date, "newest": newest_date, "category": "TARGET,NOTE", "resolve": "false"}
@@ -139,7 +162,7 @@ def create_update_or_delete_note_event(start_date, description, color, events):
 
     # Provide default description if empty
     if not description:
-        description = "There is nothing to mention this week"
+        description = "nothing to mention for this week."
 
     post_data = {
         "category": "NOTE",
@@ -158,18 +181,15 @@ def create_update_or_delete_note_event(start_date, description, color, events):
 
     if duplicate_event:
         event_id = duplicate_event['id']
-        if duplicate_event.get('description') != description:
-            url_put = f"https://intervals.icu/api/v1/athlete/{athlete_id}/events/{event_id}"
-            put_data = {"description": description}
-            logging.info(f"Updating event: ID={event_id}, Data={put_data}")
-            response_put = requests.put(url_put, headers=headers, json=put_data, auth=HTTPBasicAuth(username, api_key))
-            logging.info(f"PUT Response Status Code: {response_put.status_code}")
-            if response_put.status_code == 200:
-                logging.info(f"Duplicate event updated on {start_date}!")
-            else:
-                logging.error(f"Error updating duplicate event on {start_date}: {response_put.status_code}")
+        url_put = f"https://intervals.icu/api/v1/athlete/{athlete_id}/events/{event_id}"
+        put_data = {"description": description}
+        logging.info(f"Updating event: ID={event_id}, Data={put_data}")
+        response_put = requests.put(url_put, headers=headers, json=put_data, auth=HTTPBasicAuth(username, api_key))
+        logging.info(f"PUT Response Status Code: {response_put.status_code}")
+        if response_put.status_code == 200:
+            logging.info(f"Duplicate event updated on {start_date}!")
         else:
-            logging.info(f"No changes needed for event on {start_date}.")
+            logging.error(f"Error updating duplicate event on {start_date}: {response_put.status_code}")
     else:
         logging.info(f"New event: Data={post_data}")
         response_post = requests.post(url_post, headers=headers, json=post_data, auth=HTTPBasicAuth(username, api_key))
