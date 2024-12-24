@@ -6,7 +6,7 @@ from requests.auth import HTTPBasicAuth
 import time as time_module  # Rename the time module to avoid conflict
 
 # Configure logging
-logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levellevel)s - %(message)s')
 
 def format_activity_name(activity):
     return ''.join(word.capitalize() for word in activity.split('_'))
@@ -58,6 +58,23 @@ def delete_target_events(oldest_date, newest_date):
                 logging.info(f"Deleted target event ID={event_id}")
             else:
                 logging.error(f"Error deleting target event ID={event_id}: {response_del.status_code}")
+
+def delete_note_events(oldest_date, newest_date):
+    # Retrieve existing NOTE events within the date range
+    params = {"oldest": oldest_date, "newest": newest_date, "category": "NOTE"}
+    response_get = requests.get(url_get, headers=headers, params=params, auth=HTTPBasicAuth(username, api_key))
+    events = response_get.json() if response_get.status_code == 200 else []
+
+    # Delete NOTE events within the date range with the name defined in note_name
+    for event in events:
+        if event['category'] == "NOTE" and event['name'] == note_name:
+            event_id = event['id']
+            url_del = f"https://intervals.icu/api/v1/athlete/{athlete_id}/events/{event_id}"
+            response_del = requests.delete(url_del, headers=headers, auth=HTTPBasicAuth(username, api_key))
+            if response_del.status_code == 200:
+                logging.info(f"Deleted note event ID={event_id}")
+            else:
+                logging.error(f"Error deleting note event ID={event_id}: {response_del.status_code}")
 
 def create_update_or_delete_target_event(start_date, load_target, time_target, distance_target, activity_type, events):
     if load_target is None or load_target == 0:
@@ -125,8 +142,9 @@ df.fillna(0, inplace=True)
 oldest_date = df['start_date_local'].min().strftime("%Y-%m-%dT00:00:00")
 newest_date = df['start_date_local'].max().strftime("%Y-%m-%dT00:00:00")
 
-# Delete existing TARGET events in the date range
+# Delete existing TARGET and NOTE events in the date range
 delete_target_events(oldest_date, newest_date)
+delete_note_events(oldest_date, newest_date)
 
 # Retrieve existing events
 params = {"oldest": oldest_date, "newest": newest_date, "category": "TARGET,NOTE", "resolve": "false"}
@@ -162,7 +180,7 @@ def create_update_or_delete_note_event(start_date, description, color, events):
 
     # Provide default description if empty
     if not description:
-        description = "nothing to mention for this week."
+        description = "Nothing to mention this week."
 
     post_data = {
         "category": "NOTE",
@@ -174,29 +192,15 @@ def create_update_or_delete_note_event(start_date, description, color, events):
         "show_as_note": "false",
         "show_on_ctl_line": "false",
         "athlete_cannot_edit": "false",
-        "color": note_color  # Use the dynamic color
+        "color": note_color
     }
 
-    duplicate_event = next((event for event in events if event['category'] == "NOTE" and event['name'] == post_data['name'] and event['start_date_local'] == post_data['start_date_local']), None)
-
-    if duplicate_event:
-        event_id = duplicate_event['id']
-        url_put = f"https://intervals.icu/api/v1/athlete/{athlete_id}/events/{event_id}"
-        put_data = {"description": description}
-        logging.info(f"Updating event: ID={event_id}, Data={put_data}")
-        response_put = requests.put(url_put, headers=headers, json=put_data, auth=HTTPBasicAuth(username, api_key))
-        logging.info(f"PUT Response Status Code: {response_put.status_code}")
-        if response_put.status_code == 200:
-            logging.info(f"Duplicate event updated on {start_date}!")
-        else:
-            logging.error(f"Error updating duplicate event on {start_date}: {response_put.status_code}")
+    logging.info(f"New event: Data={post_data}")
+    response_post = requests.post(url_post, headers=headers, json=post_data, auth=HTTPBasicAuth(username, api_key))
+    if response_post.status_code == 200:
+        logging.info(f"New event created on {start_date}!")
     else:
-        logging.info(f"New event: Data={post_data}")
-        response_post = requests.post(url_post, headers=headers, json=post_data, auth=HTTPBasicAuth(username, api_key))
-        if response_post.status_code == 200:
-            logging.info(f"New event created on {start_date}!")
-        else:
-            logging.error(f"Error creating event on {start_date}: {response_post.status_code}")
+        logging.error(f"Error creating event on {start_date}: {response_post.status_code}")
 
 # Track if description has been added for the week
 description_added = {}
@@ -250,13 +254,13 @@ for index, row in df.iterrows():
     
     # Add focus for A, B, and C category races
     race_cat = str(row.get('cat', '')).upper()
-    race_name = row.get('race', '')
+    race_name = row.get('race', '').strip()
     if race_cat == 'A' and race_name:
         description += f"- Use the **{race_name}** as an {race_cat}-event to primarily focus this week on this race.\n\n"
     elif race_cat == 'B' and race_name:
         description += f"- Use the **{race_name}** to learn and improve skills.\n\n"
     elif race_cat == 'C' and race_name:
-        description += f"- Use the **{race_name}** as an hard effort training or just having fun!\n\n"
+        description += f"- Use the **{race_name}** as a hard effort training or just having fun!\n\n"
     
     # Add extra data about the next race
     next_race = None
@@ -268,7 +272,7 @@ for index, row in df.iterrows():
     if next_race is not None:
         next_race_date = next_race['start_date_local'].strftime("%Y-%m-%dT00:00:00")
         next_race_cat = str(next_race.get('cat', '')).upper()
-        next_race_name = next_race.get('race', '')
+        next_race_name = next_race.get('race', '').strip()
         next_race_week = next_race['start_date_local'].isocalendar()[1]
         weeks_to_go = next_race_week - week
         description += f"- Next race: {next_race_name} (a **{next_race_cat}**-event) within {weeks_to_go} weeks.\n\n "
