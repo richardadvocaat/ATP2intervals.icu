@@ -6,7 +6,7 @@ from requests.auth import HTTPBasicAuth
 import time as time_module  # Rename the time module to avoid conflict
 
 # Configure logging
-logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levellevel)s - %(message)s')
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(level)s - %(message)s')
 
 def format_activity_name(activity):
     return ''.join(word.capitalize() for word in activity.split('_'))
@@ -29,6 +29,7 @@ sheet_name = os.getenv('SHEET_NAME', "ATP")  # Replace this with the name of the
 whattodowithrest = "**Stay in bed or on the beach! :-)**"
 note_color = "red"
 note_name = "Weekly Summary"
+parse_delay = .01
 
 # Conversion factors
 CONVERSION_FACTORS = {
@@ -167,7 +168,7 @@ def create_update_or_delete_target_event(start_date, load_target, time_target, d
                 logging.info(f"New event created for {activity_type} on {start_date}!")
             else:
                 logging.error(f"Error creating event for {activity_type} on {start_date}: {response_post.status_code}")
-            time_module.sleep(0.1)  # Add a 100ms delay between each add event
+            time_module.sleep(parse_delay)  # Add a 100ms delay between each add event
 
 def create_update_or_delete_note_event(start_date, description, color, events, athlete_id, username, api_key):
     """
