@@ -229,7 +229,6 @@ def format_focus_items_notes(focus_items_notes):
 for index, row in df.iterrows():
     start_date = row['start_date_local'].strftime("%Y-%m-%dT00:00:00")
     period = row['period'] if not pd.isna(row['period']) else ""
-    focus = row['focus'] if not pd.isna(row['focus']) else ""
     test = row['test'] if not pd.isna(row['test']) else ""  # Added test column
     week = row['start_date_local'].isocalendar()[1]
     description = f"- You are in the **{period}** period of your trainingplan.\n\n" if period else ""
@@ -237,8 +236,6 @@ for index, row in df.iterrows():
         description += f"- {whattodowithrest}\n\n"
     if test:  # Add test comment if there is a value
         description += f"- Do the following test(s) this week: **{test}**.\n\n"
-    if focus:
-        description += f"- Focus this week on {focus}.\n\n"
     
     # Add focus based on specified columns
     focus_columns = [
