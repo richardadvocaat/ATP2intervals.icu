@@ -3,6 +3,7 @@ import os
 import pandas as pd
 import requests
 from requests.auth import HTTPBasicAuth
+import time as time_module  # Rename the time module to avoid conflict
 
 # Configure logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
@@ -23,11 +24,8 @@ api_key = user_data.get('API_KEY', "yourapikey")
 username = user_data.get('USERNAME', "API_KEY")
 athlete_id = user_data.get('ATHLETE_ID', "athleteid")
 
-
 # User variables
 sheet_name = os.getenv('SHEET_NAME', "ATP")  # Replace this with the name of the sheet
-default_activity_type = os.getenv('DEFAULT_ACTIVITY_TYPE', "Ride")  # Default activity type
-unit_preference = os.getenv('UNIT_PREFERENCE', "metric")  # User preference for units, default to metric
 whattodowithrest = "**Stay in bed or on the beach! :-)**"
 note_color = "red"
 note_name = "Weekly Summary"
@@ -51,7 +49,7 @@ def create_update_or_delete_target_event(start_date, load_target, time_target, d
 
     # Convert distance target based on unit preference for Ride and Run only
     if activity_type in ["Ride", "Run"]:
-        distance_target *= CONVERSION_FACTORS[unit_preference]
+        distance_target *= CONVERSION_FACTORS["metric"]
 
     post_data = {
         "load_target": load_target,
@@ -96,6 +94,8 @@ def create_update_or_delete_target_event(start_date, load_target, time_target, d
                 logging.info(f"New event created for {activity_type} on {start_date}!")
             else:
                 logging.error(f"Error creating event for {activity_type} on {start_date}: {response_post.status_code}")
+                
+            time_module.sleep(1)  # Add a 100ms delay between each add event
 
 # Read the Excel file and specify the sheet
 df = pd.read_excel(excel_file_path, sheet_name=sheet_name)
@@ -253,7 +253,6 @@ for index, row in df.iterrows():
         weeks_to_go = next_race_week - week
         description += f"- Next race: {next_race_name} (a **{next_race_cat}**-event) within {weeks_to_go} weeks.\n\n "
 
-    
     if week not in description_added:
         description_added[week] = False
         
