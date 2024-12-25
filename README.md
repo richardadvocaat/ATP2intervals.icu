@@ -1,7 +1,7 @@
 # ATP2intervals.icu
 
 This Python script automates the process of sending an annual training plan (ATP) with weekly (TSS, Time and/or distance)-loads for multiple sports. And it makes notes with multiple comments for your athlete to intervals.icu. It reads data from the ATP Excel file made by [Gerald](https://forum.intervals.icu/u/gerald/summary) These files can be found on [Google Drive](https://drive.google.com/drive/folders/1WhIOf2XkGiZBEN_7tX2PSShmF-QXBnBF).
-Find information about ATP [here](https://forum.intervals.icu/t/apps-in-excel-a-guide-to-getting-started/20844) on the intervals.icu forum).
+Find more information about ATP [here](https://forum.intervals.icu/t/apps-in-excel-a-guide-to-getting-started/20844) on the intervals.icu forum.
 
 ## Features
 
