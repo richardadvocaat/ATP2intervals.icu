@@ -197,6 +197,7 @@ def create_update_or_delete_target_event(start_date, load_target, time_target, d
                 logging.info(f"New event created for {activity_type} on {start_date}!")
             else:
                 logging.error(f"Error creating event for {activity_type} on {start_date}: {response_post.status_code}")
+ 
             time_module.sleep(parse_delay)  # Add a 100ms delay between each add event
 
 def create_update_or_delete_note_event(start_date, description, color, events, athlete_id, username, api_key):
@@ -241,7 +242,8 @@ def create_update_or_delete_note_event(start_date, description, color, events, a
         logging.info(f"New event created on {start_date}!")
     else:
         logging.error(f"Error creating event on {start_date}: {response_post.status_code}")
-
+        
+        time_module.sleep(parse_delay)  # Add delay between requests
 
 
 def format_focus_items_notes(focus_items_notes):
