@@ -1,5 +1,4 @@
 import logging
-import os
 import pandas as pd
 import requests
 from requests.auth import HTTPBasicAuth
@@ -10,66 +9,39 @@ logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(level)s - %(mess
 
 # Function to format activity name to camel case
 def format_activity_name(activity):
-    """
-    Converts an activity string with underscores to camel case.
-
-    Args:
-        activity (str): Activity name with underscores.
-
-    Returns:
-        str: Activity name in camel case.
-    """
     return ''.join(word.capitalize() for word in activity.split('_'))
 
 # Function to read user data from an Excel file
-def read_user_data(excel_file_path, sheet_name="userdata"):
-    """
-    Reads user data from an Excel file.
-
-    Args:
-        excel_file_path (str): Path to the Excel file.
-        sheet_name (str): Name of the sheet containing user data.
-
-    Returns:
-        dict: User data as a dictionary.
-    """
-    df = pd.read_excel(excel_file_path, sheet_name=sheet_name)
+def read_user_data(ATP_file_path, sheet_name="User_Data"):
+    df = pd.read_excel(ATP_file_path, sheet_name=sheet_name)
     user_data = df.set_index('Key').to_dict()['Value']
     return user_data
 
+# variables
+ATP_sheet_name = "ATP"
+
+# User variables
+ATP_file_path = r'C:\TEMP\Intervals_API_Tools_Office365_v1.6_ATP2intervals.xlsm'
+note_name = "Weekly Summary"
+parse_delay = .01
+do_at_rest = "**Stay in bed, on the beach and focus on friends, family and your Märklin trainset.**"
+
 # Read user data from USERDATA.xlsx file
-user_data = read_user_data(r'C:\Temp\USERDATA.xlsx')
-excel_file_path = user_data.get('EXCEL_FILE_PATH', r"C:\TEMP\ATP.xlsx")
+user_data = read_user_data(ATP_file_path)
 api_key = user_data.get('API_KEY', "yourapikey")
 username = user_data.get('USERNAME', "API_KEY")
 athlete_id = user_data.get('ATHLETE_ID', "athleteid")
-
-# User variables
-sheet_name = os.getenv('SHEET_NAME', "ATP")
-whattodowithrest = "**Stay in bed or on the beach! :-)**"
-note_color = "red"
-note_name = "Weekly Summary"
-parse_delay = .01
+unit_preference = user_data.get('DISTANCE_SYSTEM', "metric")
+note_color = user_data.get('NOTE_COLOR', "red")
 
 # API endpoints
 url_base = "https://intervals.icu/api/v1/athlete/{athlete_id}"
 url_profile = f"https://intervals.icu/api/v1/athlete/{athlete_id}/profile"
-HEADERS = {"Content-Type": "application/json"}
+API_headers = {"Content-Type": "application/json"}
 
-# Function to get athlete's name
+# Get athlete's name from intervals.icu
 def get_athlete_name(athlete_id, username, api_key):
-    """
-    Fetches the athlete's name using their profile data from the API.
-
-    Args:
-        athlete_id (str): Athlete ID.
-        username (str): API username.
-        api_key (str): API key.
-
-    Returns:
-        str: Athlete's first name.
-    """
-    response = requests.get(url_profile, auth=HTTPBasicAuth(username, api_key), headers=HEADERS)
+    response = requests.get(url_profile, auth=HTTPBasicAuth(username, api_key), headers=API_headers)
     logging.info(f"Response Status Code: {response.status_code}")
     logging.info(f"Response Headers: {response.headers}")
     logging.info(f"Response Text: {response.text}")
@@ -91,11 +63,13 @@ print(f"Athlete First Name: {athlete_name}")
 
 logging.info(f"Using athlete first name: {athlete_name} for further processing.")
 
-# Conversion factors
-CONVERSION_FACTORS = {
-    "metric": 1000,
-    "imperial": 1609.344
-}
+def distance_conversion_factor(unit_preference):
+    conversion_factors = {
+        "metric": 1000,
+        "imperial": 1609.344,
+        "Rijnlands": 3.186 # https://nl.wikipedia.org/wiki/Voet_(lengtemaat)
+    }
+    return conversion_factors.get(unit_preference, 1000)  # Default to metric if preference is not found
 
 # Function to delete events within a specified date range and category
 def delete_events(athlete_id, username, api_key, oldest_date, newest_date, category, name=None):
@@ -113,7 +87,7 @@ def delete_events(athlete_id, username, api_key, oldest_date, newest_date, categ
     """
     url_get = f"{url_base}/eventsjson".format(athlete_id=athlete_id)
     params = {"oldest": oldest_date, "newest": newest_date, "category": category}
-    response_get = requests.get(url_get, headers=HEADERS, params=params, auth=HTTPBasicAuth(username, api_key))
+    response_get = requests.get(url_get, headers=API_headers, params=params, auth=HTTPBasicAuth(username, api_key))
     events = response_get.json() if response_get.status_code == 200 else []
 
     for event in events:
@@ -121,7 +95,7 @@ def delete_events(athlete_id, username, api_key, oldest_date, newest_date, categ
             continue
         event_id = event['id']
         url_del = f"{url_base}/events/{event_id}".format(athlete_id=athlete_id)
-        response_del = requests.delete(url_del, headers=HEADERS, auth=HTTPBasicAuth(username, api_key))
+        response_del = requests.delete(url_del, headers=API_headers, auth=HTTPBasicAuth(username, api_key))
         if response_del.status_code == 200:
             logging.info(f"Deleted {category.lower()} event ID={event_id}")
         else:
@@ -153,7 +127,7 @@ def create_update_or_delete_target_event(start_date, load_target, time_target, d
     distance_target = distance_target or 0
 
     if activity_type in ["Ride", "Run"]:
-        distance_target *= CONVERSION_FACTORS["metric"]
+       distance_target *= distance_conversion_factor(unit_preference)
 
     post_data = {
         "load_target": load_target,
@@ -181,7 +155,7 @@ def create_update_or_delete_target_event(start_date, load_target, time_target, d
                 "distance_target": distance_target
             }
             logging.info(f"Updating event: ID={event_id}, Data={put_data}")
-            response_put = requests.put(url_put, headers=HEADERS, json=put_data, auth=HTTPBasicAuth(username, api_key))
+            response_put = requests.put(url_put, headers=API_headers, json=put_data, auth=HTTPBasicAuth(username, api_key))
             logging.info(f"PUT Response Status Code: {response_put.status_code}")
             if response_put.status_code == 200:
                 logging.info(f"Duplicate event updated for {activity_type} on {start_date}!")
@@ -193,7 +167,7 @@ def create_update_or_delete_target_event(start_date, load_target, time_target, d
         if load_target > 0 or time_target > 0 or distance_target > 0:
             logging.info(f"New event: Data={post_data}")
             url_post = f"{url_base}/events".format(athlete_id=athlete_id)
-            response_post = requests.post(url_post, headers=HEADERS, json=post_data, auth=HTTPBasicAuth(username, api_key))
+            response_post = requests.post(url_post, headers=API_headers, json=post_data, auth=HTTPBasicAuth(username, api_key))
             if response_post.status_code == 200:
                 logging.info(f"New event created for {activity_type} on {start_date}!")
             else:
@@ -233,7 +207,7 @@ def create_update_or_delete_note_event(start_date, description, color, events, a
 
     logging.info(f"New event: Data={post_data}")
     url_post = f"{url_base}/events".format(athlete_id=athlete_id)
-    response_post = requests.post(url_post, headers=HEADERS, json=post_data, auth=HTTPBasicAuth(username, api_key))
+    response_post = requests.post(url_post, headers=API_headers, json=post_data, auth=HTTPBasicAuth(username, api_key))
     if response_post.status_code == 200:
         logging.info(f"New event created on {start_date}!")
     else:
@@ -284,7 +258,7 @@ def add_period_description(row, description):
     if period:
         description += f"- You are in the **{period}** period of your trainingplan.\n\n"
         if period == "Rest":
-            description += f"- {whattodowithrest}\n\n"
+            description += f"- {do_at_rest}\n\n"
     return description
 
 # Function to handle test description
@@ -338,24 +312,14 @@ def add_next_race_description(index, df, week, description):
         next_race_cat = str(next_race.get('cat', '')).upper()
         weeks_to_go = next_race_week - week
         if weeks_to_go == 1:
-            description += f"- Upcoming race: {next_race_name} (a **{next_race_cat}**-event) next week on {next_race_day} {next_race_dayofmonth} {next_race_month}.\n\n "
+            description += f"- Upcoming race: **{next_race_name}**(a **{next_race_cat}**-event) next week on {next_race_day} {next_race_dayofmonth} {next_race_month}.\n\n "
         if weeks_to_go > 1:
-            description += f"- Upcoming race: {next_race_name} (a **{next_race_cat}**-event) within **{weeks_to_go}** weeks on {next_race_day} {next_race_dayofmonth} {next_race_month}.\n\n "    
+            description += f"- Upcoming race: **{next_race_name}** (a **{next_race_cat}**-event) within **{weeks_to_go}** weeks on {next_race_day} {next_race_dayofmonth} {next_race_month}.\n\n "    
     return description
 
 # Main function to execute the script logic
 def main():
-    """
-    Main function to execute the script logic.
-    """
-    user_data = read_user_data(r'C:\Temp\USERDATA.xlsx')
-    excel_file_path = user_data.get('EXCEL_FILE_PATH', r"C:\TEMP\ATP.xlsx")
-    api_key = user_data.get('API_KEY', "yourapikey")
-    username = user_data.get('USERNAME', "API_KEY")
-    athlete_id = user_data.get('ATHLETE_ID', "athleteid")
-    sheet_name = os.getenv('SHEET_NAME', "ATP")
-
-    df = pd.read_excel(excel_file_path, sheet_name=sheet_name)
+    df = pd.read_excel(ATP_file_path, sheet_name=ATP_sheet_name)
     df.fillna(0, inplace=True)
 
     oldest_date = df['start_date_local'].min().strftime("%Y-%m-%dT00:00:00")
@@ -366,7 +330,7 @@ def main():
 
     url_get = f"{url_base}/eventsjson".format(athlete_id=athlete_id)
     params = {"oldest": oldest_date, "newest": newest_date, "category": "TARGET,NOTE", "resolve": "false"}
-    response_get = requests.get(url_get, headers=HEADERS, params=params, auth=HTTPBasicAuth(username, api_key))
+    response_get = requests.get(url_get, headers=API_headers, params=params, auth=HTTPBasicAuth(username, api_key))
     events = response_get.json() if response_get.status_code == 200 else []
 
     for index, row in df.iterrows():
@@ -415,4 +379,4 @@ def main():
         time_module.sleep(parse_delay)  # Add delay between each loop iteration for note events
 
 if __name__ == "__main__":
-    main()  
+    main(
