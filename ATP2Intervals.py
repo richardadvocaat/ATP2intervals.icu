@@ -216,10 +216,7 @@ def create_update_or_delete_note_event(start_date, description, color, events, a
     """
     end_date = start_date
 
-    if not description:
-        description = "Nothing to mention this week."
-        
-    description = f"Hi {athlete_name}, here is your weekly summary:\n\n" + description
+    description = populate_description(description)  # Use the new function to populate the description
 
     post_data = {
         "category": "NOTE",
@@ -258,54 +255,28 @@ def format_focus_items_notes(focus_items_notes):
         return ', '.join(focus_items_notes[:-1]) + ' and ' + focus_items_notes[-1]
     return ''.join(focus_items_notes)
 
-# Main function to execute the script logic
-def main():
+# Function to populate the description
+def populate_description(description):
+    if not description:
+        description = "Nothing to mention this week."
+        
+    description = f"Hi **{athlete_name}**, here is your weekly summary:\n\n" + description
+    return description
+
+# Function to format focus items into a readable list
+def format_focus_items_notes(focus_items_notes):
     """
-    Main function to execute the script logic.
+    Formats focus items into a readable list.
+
+    Args:
+        focus_items_notes (list): List of focus items.
+
+    Returns:
+        str: Formatted focus items.
     """
-    user_data = read_user_data(r'C:\Temp\USERDATA.xlsx')
-    excel_file_path = user_data.get('EXCEL_FILE_PATH', r"C:\TEMP\ATP.xlsx")
-    api_key = user_data.get('API_KEY', "yourapikey")
-    username = user_data.get('USERNAME', "API_KEY")
-    athlete_id = user_data.get('ATHLETE_ID', "athleteid")
-    sheet_name = os.getenv('SHEET_NAME', "ATP")
-
-    df = pd.read_excel(excel_file_path, sheet_name=sheet_name)
-    df.fillna(0, inplace=True)
-
-    oldest_date = df['start_date_local'].min().strftime("%Y-%m-%dT00:00:00")
-    newest_date = df['start_date_local'].max().strftime("%Y-%m-%dT00:00:00")
-
-    delete_events(athlete_id, username, api_key, oldest_date, newest_date, "TARGET")
-    delete_events(athlete_id, username, api_key, oldest_date, newest_date, "NOTE", note_name)
-
-    url_get = f"{url_base}/eventsjson".format(athlete_id=athlete_id)
-    params = {"oldest": oldest_date, "newest": newest_date, "category": "TARGET,NOTE", "resolve": "false"}
-    response_get = requests.get(url_get, headers=HEADERS, params=params, auth=HTTPBasicAuth(username, api_key))
-    events = response_get.json() if response_get.status_code == 200 else []
-
-    for index, row in df.iterrows():
-        start_date = row['start_date_local'].strftime("%Y-%m-%dT00:00:00")
-        for col in df.columns:
-            if col.endswith('_load'):
-                activity = format_activity_name(col.split('_load')[0])
-                load = int(row[col])
-                time_col = f"{col.split('_load')[0]}_time"
-                distance_col = f"{col.split('_load')[0]}_distance"
-                time = int(row[time_col]) if time_col in row else 0
-                distance = int(row[distance_col]) if distance_col in row else 0
-
-                if load > 0 or time > 0 or distance > 0:
-                    create_update_or_delete_target_event(start_date, load, time, distance, activity, events, athlete_id, username, api_key)
-                elif any([event['type'] == activity for event in events if event['start_date_local'] == start_date]):
-                    create_update_or_delete_target_event(start_date, load, time, distance, activity, events, athlete_id, username, api_key)
-
-        if all(row[col] == 0 for col in df.columns if col.endswith('_load')) and all(row[col] == 0 for col in df.columns if col.endswith('_time')) and all(row[col] == 0 for col in df.columns if col.endswith('_distance')):
-            for col in df.columns:
-                if col.endswith('_load'):
-                    activity = format_activity_name(col.split('_load')[0])
-                    create_update_or_delete_target_event(start_date, 0, 0, 0, activity, events, athlete_id, username, api_key)
-            time_module.sleep(parse_delay)  # Add delay between each loop iteration for target events
+    if len(focus_items_notes) > 1:
+        return ', '.join(focus_items_notes[:-1]) + ' and ' + focus_items_notes[-1]
+    return ''.join(focus_items_notes)
 
 # Function to handle period description
 def add_period_description(row, description):
@@ -332,7 +303,7 @@ def add_focus_description(row, description):
     additional_focus = [col for col in focus_columns if str(row.get(col, '')).lower() == 'x']
     if additional_focus:
         formatted_focus = format_focus_items_notes(additional_focus)
-        description += f"- Focus on {formatted_focus}.\n\n"
+        description += f"- Focus on **{formatted_focus}**.\n\n"
     elif description.strip():
         description += "- You don't have to focus on specific workouts this week.\n\n"
     return description
@@ -366,8 +337,10 @@ def add_next_race_description(index, df, week, description):
         next_race_name = next_race.get('race', '').strip()
         next_race_cat = str(next_race.get('cat', '')).upper()
         weeks_to_go = next_race_week - week
-        if weeks_to_go > 0:
-            description += f"- Next race: {next_race_name} (a **{next_race_cat}**-event) within {weeks_to_go} weeks on {next_race_day} {next_race_dayofmonth} {next_race_month}.\n\n "
+        if weeks_to_go == 1:
+            description += f"- Upcoming race: {next_race_name} (a **{next_race_cat}**-event) next week on {next_race_day} {next_race_dayofmonth} {next_race_month}.\n\n "
+        if weeks_to_go > 1:
+            description += f"- Upcoming race: {next_race_name} (a **{next_race_cat}**-event) within **{weeks_to_go}** weeks on {next_race_day} {next_race_dayofmonth} {next_race_month}.\n\n "    
     return description
 
 # Main function to execute the script logic
@@ -427,8 +400,11 @@ def main():
         description = add_period_description(row, description)
         description = add_test_description(row, description)
         description = add_focus_description(row, description)
-        description = add_race_focus_description(row, description)
-        description = add_next_race_description(index, df, week, description)
+        race_focus_description = add_race_focus_description(row, description)
+        if race_focus_description == description:  # If race focus description didn't change
+            description = add_next_race_description(index, df, week, description)
+        else:
+            description = race_focus_description
 
         if week not in description_added:
             description_added[week] = False
@@ -439,4 +415,4 @@ def main():
         time_module.sleep(parse_delay)  # Add delay between each loop iteration for note events
 
 if __name__ == "__main__":
-    main()
+    main()  
