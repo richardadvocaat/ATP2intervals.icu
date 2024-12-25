@@ -18,10 +18,10 @@ def read_user_data(ATP_file_path, sheet_name="User_Data"):
     return user_data
 
 # variables
-ATP_sheet_name = "ATP"
+ATP_sheet_name = "ATP_data"
+ATP_file_path = r'C:\TEMP\Intervals_API_Tools_Office365_v1.6_ATP2intervals.xlsm'
 
 # User variables
-ATP_file_path = r'C:\TEMP\Intervals_API_Tools_Office365_v1.6_ATP2intervals.xlsm'
 note_name = "Weekly Summary"
 parse_delay = .01
 do_at_rest = "**Stay in bed, on the beach and focus on friends, family and your Märklin trainset.**"
@@ -379,4 +379,5 @@ def main():
         time_module.sleep(parse_delay)  # Add delay between each loop iteration for note events
 
 if __name__ == "__main__":
-    main(
+    main()
+    
