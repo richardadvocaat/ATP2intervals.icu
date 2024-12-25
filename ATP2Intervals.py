@@ -307,62 +307,68 @@ def main():
                     create_update_or_delete_target_event(start_date, 0, 0, 0, activity, events, athlete_id, username, api_key)
             time_module.sleep(parse_delay)  # Add delay between each loop iteration for target events
 
-    description_added = {}
-    for index, row in df.iterrows():
-        start_date = row['start_date_local'].strftime("%Y-%m-%dT00:00:00")
-        period = row['period'] if not pd.isna(row['period']) else ""
-        test = row['test'] if not pd.isna(row['test']) else ""
-        week = row['start_date_local'].isocalendar()[1]
-        description = f"- You are in the **{period}** period of your trainingplan.\n\n" if period else ""
-        if period == "Rest":
-            description += f"- {whattodowithrest}\n\n"
-        if test:
-            description += f"- Do the following test(s) this week: **{test}**.\n\n"
-
-        focus_columns = [
-            'Aerobic Endurance', 'Muscular force', 'Speed Skills',
-            'Muscular Endurance', 'Anaerobic Endurance', 'Sprint Power'
-        ]
-        additional_focus = [col for col in focus_columns if str(row.get(col, '')).lower() == 'x']
-        if additional_focus:
-            formatted_focus = format_focus_items_notes(additional_focus)
-            description += f"- Focus on {formatted_focus}.\n\n"
-        elif description.strip():
-            description += "- You don't have to focus on specific workouts this week.\n\n"
-
-        race_cat = str(row.get('cat', '')).upper()
-        race_name = row.get('race', '').strip()
-        if race_cat == 'A' and race_name:
-            description += f"- Use the **{race_name}** as an {race_cat}-event to primarily focus this week on this race.\n\n"
-        elif race_cat == 'B' and race_name:
-            description += f"- Use the **{race_name}** to learn and improve skills.\n\n"
-        elif race_cat == 'C' and race_name:
-            description += f"- Use the **{race_name}** as a hard effort training or just having fun!\n\n"
-
-        next_race = None
-        for i in range(index + 0, len(df)):
-            next_race_name = df.at[i, 'race']
-            if next_race_name and next_race_name not in ['-', '0', 'None']:
-                next_race = df.iloc[i]
-                break
-        if next_race is not None:
-            next_race_date = pd.to_datetime(next_race['race_date']).strftime("%Y-%m-%dT00:00:00")
-            next_race_month = pd.to_datetime(next_race['race_date']).strftime("%B")
-            next_race_week = pd.to_datetime(next_race['race_date']).isocalendar()[1]
-            next_race_day = pd.to_datetime(next_race['race_date']).strftime("%A")
-            next_race_dayofmonth = pd.to_datetime(next_race['race_date']).day
-            next_race_name = next_race.get('race', '').strip()
-            next_race_cat = str(next_race.get('cat', '')).upper()
-            weeks_to_go = next_race_week - week
-            description += f"- Next race: {next_race_name} (a **{next_race_cat}**-event) within {weeks_to_go} weeks on {next_race_day} {next_race_dayofmonth} {next_race_month}.\n\n "
-
-        if week not in description_added:
-            description_added[week] = False
-
-        if description.strip() and not description_added[week]:
-            create_update_or_delete_note_event(start_date, description, note_color, events, athlete_id, username, api_key)
-            description_added[week] = True
-        time_module.sleep(parse_delay)  # Add delay between each loop iteration for note events
+        description_added = {}
+        for index, row in df.iterrows():
+            start_date = row['start_date_local'].strftime("%Y-%m-%dT00:00:00")
+            period = row['period'] if not pd.isna(row['period']) else ""
+            test = row['test'] if not pd.isna(row['test']) else ""
+            week = row['start_date_local'].isocalendar()[1]
+            description = f"- You are in the **{period}** period of your trainingplan.\n\n" if period else ""
+            if period == "Rest":
+                description += f"- {whattodowithrest}\n\n"
+            if test:
+                description += f"- Do the following test(s) this week: **{test}**.\n\n"
+        
+            focus_columns = [
+                'Aerobic Endurance', 'Muscular force', 'Speed Skills',
+                'Muscular Endurance', 'Anaerobic Endurance', 'Sprint Power'
+            ]
+            additional_focus = [col for col in focus_columns if str(row.get(col, '')).lower() == 'x']
+            if additional_focus:
+                formatted_focus = format_focus_items_notes(additional_focus)
+                description += f"- Focus on {formatted_focus}.\n\n"
+            elif description.strip():
+                description += "- You don't have to focus on specific workouts this week.\n\n"
+        
+            race_cat = str(row.get('cat', '')).upper()
+            race_name = row.get('race', '').strip()
+            race_to_focus_on = ""
+            if race_cat == 'A' and race_name:
+                race_to_focus_on = f"- Use the **{race_name}** as an {race_cat}-event to primarily focus this week on this race.\n\n"
+            elif race_cat == 'B' and race_name:
+                race_to_focus_on = f"- Use the **{race_name}** to learn and improve skills.\n\n"
+            elif race_cat == 'C' and race_name:
+                race_to_focus_on = f"- Use the **{race_name}** as a hard effort training or just having fun!\n\n"
+            description += race_to_focus_on
+        
+            next_race = None
+            for i in range(index + 1, len(df)):
+                next_race_name = df.at[i, 'race']
+                if next_race_name and next_race_name not in ['-', '0', 'None']:
+                    next_race = df.iloc[i]
+                    break
+            if next_race is not None:
+                if race_to_focus_on:
+                    description += "CHECK\n\n"
+                else:
+                    next_race_date = pd.to_datetime(next_race['race_date']).strftime("%Y-%m-%dT00:00:00")
+                    next_race_month = pd.to_datetime(next_race['race_date']).strftime("%B")
+                    next_race_week = pd.to_datetime(next_race['race_date']).isocalendar()[1]
+                    next_race_day = pd.to_datetime(next_race['race_date']).strftime("%A")
+                    next_race_dayofmonth = pd.to_datetime(next_race['race_date']).day
+                    next_race_name = next_race.get('race', '').strip()
+                    next_race_cat = str(next_race.get('cat', '')).upper()
+                    weeks_to_go = next_race_week - week
+                    if weeks_to_go > 0:
+                        description += f"- Next race: {next_race_name} (a **{next_race_cat}**-event) within {weeks_to_go} weeks on {next_race_day} {next_race_dayofmonth} {next_race_month}.\n\n "
+        
+            if week not in description_added:
+                description_added[week] = False
+        
+            if description.strip() and not description_added[week]:
+                create_update_or_delete_note_event(start_date, description, note_color, events, athlete_id, username, api_key)
+                description_added[week] = True
+            time_module.sleep(parse_delay)  # Add delay between each loop iteration for note events
 
 if __name__ == "__main__":
     main()
