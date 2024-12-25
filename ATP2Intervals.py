@@ -219,7 +219,7 @@ def create_update_or_delete_note_event(start_date, description, color, events, a
         description = "Nothing to mention this week."
         
     # Add the new sentence at the beginning of the description
-    description = f"Hi {athlete_name}, here is your weekly summary.\n\n" + description
+    description = f"Hi {athlete_name}, here is your weekly summary:\n\n" + description
 
     post_data = {
         "category": "NOTE",
