@@ -346,12 +346,15 @@ def main():
                 next_race = df.iloc[i]
                 break
         if next_race is not None:
-            next_race_date = next_race['start_date_local'].strftime("%Y-%m-%dT00:00:00")
-            next_race_cat = str(next_race.get('cat', '')).upper()
+            next_race_date = pd.to_datetime(next_race['race_date']).strftime("%Y-%m-%dT00:00:00")
+            next_race_month = pd.to_datetime(next_race['race_date']).strftime("%B")
+            next_race_week = pd.to_datetime(next_race['race_date']).isocalendar()[1]
+            next_race_day = pd.to_datetime(next_race['race_date']).strftime("%A")
+            next_race_dayofmonth = pd.to_datetime(next_race['race_date']).day
             next_race_name = next_race.get('race', '').strip()
-            next_race_week = next_race['start_date_local'].isocalendar()[1]
+            next_race_cat = str(next_race.get('cat', '')).upper()
             weeks_to_go = next_race_week - week
-            description += f"- Next race: {next_race_name} (a **{next_race_cat}**-event) within {weeks_to_go} weeks.\n\n "
+            description += f"- Next race: {next_race_name} (a **{next_race_cat}**-event) within {weeks_to_go} weeks on {next_race_day} {next_race_dayofmonth} {next_race_month}.\n\n "
 
         if week not in description_added:
             description_added[week] = False
