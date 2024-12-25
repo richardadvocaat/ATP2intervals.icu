@@ -340,7 +340,7 @@ def main():
             description += f"- Use the **{race_name}** as a hard effort training or just having fun!\n\n"
 
         next_race = None
-        for i in range(index + 2, len(df)):
+        for i in range(index + 0, len(df)):
             next_race_name = df.at[i, 'race']
             if next_race_name and next_race_name not in ['-', '0', 'None']:
                 next_race = df.iloc[i]
