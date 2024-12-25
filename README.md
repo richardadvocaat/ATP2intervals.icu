@@ -23,4 +23,5 @@ This Python script automates the process of sending an annual training plan with
 
 1. **Setup**: Ensure you have the required Python libraries installed (`logging`, `os`, `pandas`, `requests`).
 2. **Configuration**: Update the user variables at the top of the script with your Excel file path, sheet name, athlete ID, API key, and preferred unit system (metric or imperial).
-3. **Run**: Execute the script to sync your training plan with intervals.icu.
+3. **Excel sheets**: Place the USER_DATE.xls in C:\TEMP. (this is hardcoded in the script now) Configure the path to ATP.xlsx in USER_DATE.xls (C:\TEMP\ATP.xlsx is default) 
+4. **Run**: Execute the script to sync your training plan with intervals.icu.
