@@ -1,6 +1,6 @@
 # ATP2intervals.icu
 
-This Python script automates the process of sending an annual training plan with weekly loads (for multiple sports) to intervals.icu. It reads data from an Excel file based on the files to be found here: https://drive.google.com/drive/folders/1WhIOf2XkGiZBEN_7tX2PSShmF-QXBnBF (more info: https://forum.intervals.icu/t/apps-in-excel-a-guide-to-getting-started/20844) and updates or creates target and note events in intervals.icu based on the provided data.
+This Python script automates the process of sending an annual training plan with weekly loads (for multiple sports) to intervals.icu. It reads data from the ATP Excel file made by [Gerald](https://forum.intervals.icu/u/gerald/summary) based on the files to be found here: https://drive.google.com/drive/folders/1WhIOf2XkGiZBEN_7tX2PSShmF-QXBnBF [more info:] (https://forum.intervals.icu/t/apps-in-excel-a-guide-to-getting-started/20844) and updates or creates target and note events in intervals.icu based on the provided data.
 
 ## Features
 
