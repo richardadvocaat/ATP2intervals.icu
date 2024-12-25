@@ -24,6 +24,6 @@ Find more information about ATP on the [intervals.icu forum](https://forum.inter
 
 1. **Setup**: Ensure you have the required Python libraries installed (`logging`, `os`, `pandas`, `requests`).
 2. **Configuration**: Update the user variables at the top of the script with your Excel file path, sheet name, athlete ID, API key, and preferred unit system (metric or imperial).
-3. **Excel Sheets**: Place the `USERDATA.xlsx` in `C:\TEMP`. Configure the path to `ATP.xlsx` in `USERDATA.xlsx` (default is `C:\TEMP\ATP.xlsx`).
+3. **Excel Sheets**: Place the `Intervals_API_Tools_Office365_v1._ATP2intervals.xlsm` in `C:\TEMP`. (This is hardcoded now, but based on the name, there is a possibility to differentiate this) 
 4. **Run**: Execute the script to sync your training plan with intervals.icu.
 
