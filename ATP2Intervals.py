@@ -31,6 +31,16 @@ note_color = "red"
 note_name = "Weekly Summary"
 parse_delay = .01
 
+def format_activity_name(activity):
+    if activity.lower() == 'mtb':
+        return 'MountainBikeRide'
+    return ''.join(word.capitalize() for word in activity.split('_'))
+    if activity.lower() == 'Trailrun':
+        return 'TrailRunning'
+    return ''.join(word.capitalize() for word in activity.split('_'))
+
+
+
 # Conversion factors
 CONVERSION_FACTORS = {
     "metric": 1000,
