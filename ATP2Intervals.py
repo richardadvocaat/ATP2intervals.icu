@@ -39,7 +39,36 @@ CONVERSION_FACTORS = {
 
 # API endpoints
 BASE_URL = "https://intervals.icu/api/v1/athlete/{athlete_id}"
+url_profile = f"https://intervals.icu/api/v1/athlete/{athlete_id}/profile"
 HEADERS = {"Content-Type": "application/json"}
+
+def get_athlete_name(athlete_id, username, api_key):
+    response = requests.get(url_profile, auth=HTTPBasicAuth(username, api_key), headers=HEADERS)
+    logging.info(f"Response Status Code: {response.status_code}")
+    logging.info(f"Response Headers: {response.headers}")
+    logging.info(f"Response Text: {response.text}")
+    if response.status_code == 200:
+        profile = response.json()
+        #logging.info(f"Response JSON: {profile}")
+        full_name = profile.get('athlete', {}).get('name', 'Athlete without name')
+        first_name = full_name.split()[0] if full_name else 'Athlete'
+        return first_name
+    else:
+        logging.error(f"Error fetching athlete profile: {response.status_code}")
+        try:
+            logging.error(f"Response JSON: {response.json()}")
+        except ValueError:
+            logging.error("Response content is not in JSON format")
+        raise Exception(f"Error fetching athlete profile: {response.status_code}")
+
+# Fetch and print the athlete's first name
+athlete_name = get_athlete_name(athlete_id, username, api_key)
+print(f"Athlete First Name: {athlete_name}")
+
+# Use athlete_name in other parts of the script
+# Example: logging the athlete's first name
+logging.info(f"Using athlete first name: {athlete_name} for further processing.")
+
 
 def format_activity_name(activity):
     """
