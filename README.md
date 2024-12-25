@@ -11,7 +11,7 @@ Find information about ATP [here](https://forum.intervals.icu/t/apps-in-excel-a-
 - **Efficient Data Handling**: Retrieves all relevant events in a single API call to improve performance and reduce server load.
 - **Unit Conversion**: Allows users to specify their unit preference (metric or imperial) for Bike and Run distances, while Swim distances remain in meters.
 - **Custom Descriptions**: Adds custom descriptions based on the 'period' and 'focus' columns from the Excel file.
-  - If 'period' is "Rest", the description will include "Stay in bed or on the beach!".
+  - If 'period' is "Rest", the description will include someting like "Stay in bed or on the beach!". (but it an variable)
   - If 'focus' has a value, the description will include "Focus this week on {focus}".
 - **Test Column**: Adds comments for tests specified in the 'test' column.
 - **Focus Columns**: Adds focus based on specified focus columns like Aerobic Endurance, Muscular Force, etc.
@@ -24,5 +24,6 @@ Find information about ATP [here](https://forum.intervals.icu/t/apps-in-excel-a-
 
 1. **Setup**: Ensure you have the required Python libraries installed (`logging`, `os`, `pandas`, `requests`).
 2. **Configuration**: Update the user variables at the top of the script with your Excel file path, sheet name, athlete ID, API key, and preferred unit system (metric or imperial).
-3. **Excel sheets**: Place the USER_DATE.xls in C:\TEMP. (this is hardcoded in the script now) Configure the path to ATP.xlsx in USER_DATE.xls (C:\TEMP\ATP.xlsx is default) 
+3. **Excel Sheets**: Place the `USERDATA.xlsx` in `C:\TEMP`. Configure the path to `ATP.xlsx` in `USERDATA.xlsx` (default is `C:\TEMP\ATP.xlsx`).
 4. **Run**: Execute the script to sync your training plan with intervals.icu.
+
