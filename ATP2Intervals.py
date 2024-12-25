@@ -8,10 +8,31 @@ import time as time_module  # Rename the time module to avoid conflict
 # Configure logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(level)s - %(message)s')
 
+# Function to format activity name to camel case
 def format_activity_name(activity):
+    """
+    Converts an activity string with underscores to camel case.
+
+    Args:
+        activity (str): Activity name with underscores.
+
+    Returns:
+        str: Activity name in camel case.
+    """
     return ''.join(word.capitalize() for word in activity.split('_'))
 
+# Function to read user data from an Excel file
 def read_user_data(excel_file_path, sheet_name="userdata"):
+    """
+    Reads user data from an Excel file.
+
+    Args:
+        excel_file_path (str): Path to the Excel file.
+        sheet_name (str): Name of the sheet containing user data.
+
+    Returns:
+        dict: User data as a dictionary.
+    """
     df = pd.read_excel(excel_file_path, sheet_name=sheet_name)
     user_data = df.set_index('Key').to_dict()['Value']
     return user_data
@@ -30,25 +51,24 @@ note_color = "red"
 note_name = "Weekly Summary"
 parse_delay = .1
 
-def format_activity_name(activity):
-    if activity.lower() == 'mtb':
-        return 'MountainBikeRide'
-    return ''.join(word.capitalize() for word in activity.split('_'))
-    if activity.lower() == 'Trailrun':
-        return 'TrailRunning'
-    return ''.join(word.capitalize() for word in activity.split('_'))
-
-# Conversion factors
-CONVERSION_FACTORS = {
-    "metric": 1000,
-    "imperial": 1609.344
-}
 # API endpoints
 url_base = "https://intervals.icu/api/v1/athlete/{athlete_id}"
 url_profile = f"https://intervals.icu/api/v1/athlete/{athlete_id}/profile"
 HEADERS = {"Content-Type": "application/json"}
 
+# Function to get athlete's name
 def get_athlete_name(athlete_id, username, api_key):
+    """
+    Fetches the athlete's name using their profile data from the API.
+
+    Args:
+        athlete_id (str): Athlete ID.
+        username (str): API username.
+        api_key (str): API key.
+
+    Returns:
+        str: Athlete's first name.
+    """
     response = requests.get(url_profile, auth=HTTPBasicAuth(username, api_key), headers=HEADERS)
     logging.info(f"Response Status Code: {response.status_code}")
     logging.info(f"Response Headers: {response.headers}")
@@ -71,33 +91,13 @@ print(f"Athlete First Name: {athlete_name}")
 
 logging.info(f"Using athlete first name: {athlete_name} for further processing.")
 
-def format_activity_name(activity):
-    """
-    Converts an activity string with underscores to camel case.
+# Conversion factors
+CONVERSION_FACTORS = {
+    "metric": 1000,
+    "imperial": 1609.344
+}
 
-    Args:
-        activity (str): Activity name with underscores.
-
-    Returns:
-        str: Activity name in camel case.
-    """
-    return ''.join(word.capitalize() for word in activity.split('_'))
-
-def read_user_data(excel_file_path, sheet_name="userdata"):
-    """
-    Reads user data from an Excel file.
-
-    Args:
-        excel_file_path (str): Path to the Excel file.
-        sheet_name (str): Name of the sheet containing user data.
-
-    Returns:
-        dict: User data as a dictionary.
-    """
-    df = pd.read_excel(excel_file_path, sheet_name=sheet_name)
-    user_data = df.set_index('Key').to_dict()['Value']
-    return user_data
-
+# Function to delete events within a specified date range and category
 def delete_events(athlete_id, username, api_key, oldest_date, newest_date, category, name=None):
     """
     Deletes events within a specified date range and category, optionally filtered by name.
@@ -128,6 +128,7 @@ def delete_events(athlete_id, username, api_key, oldest_date, newest_date, categ
             logging.error(f"Error deleting {category.lower()} event ID={event_id}: {response_del.status_code}")
         time_module.sleep(parse_delay)  # Add delay between each delete event
 
+# Function to create, update, or delete a target event based on the provided data
 def create_update_or_delete_target_event(start_date, load_target, time_target, distance_target, activity_type, events, athlete_id, username, api_key):
     """
     Creates, updates, or deletes a target event based on the provided data.
@@ -199,6 +200,7 @@ def create_update_or_delete_target_event(start_date, load_target, time_target, d
                 logging.error(f"Error creating event for {activity_type} on {start_date}: {response_post.status_code}")
             time_module.sleep(parse_delay)  # Add delay between each add event
 
+# Function to create, update, or delete a note event based on the provided data
 def create_update_or_delete_note_event(start_date, description, color, events, athlete_id, username, api_key):
     """
     Creates, updates, or deletes a note event based on the provided data.
@@ -241,6 +243,7 @@ def create_update_or_delete_note_event(start_date, description, color, events, a
         logging.error(f"Error creating event on {start_date}: {response_post.status_code}")
         time_module.sleep(parse_delay)  # Add delay between requests
 
+# Function to format focus items into a readable list
 def format_focus_items_notes(focus_items_notes):
     """
     Formats focus items into a readable list.
@@ -255,7 +258,11 @@ def format_focus_items_notes(focus_items_notes):
         return ', '.join(focus_items_notes[:-1]) + ' and ' + focus_items_notes[-1]
     return ''.join(focus_items_notes)
 
+# Main function to execute the script logic
 def main():
+    """
+    Main function to execute the script logic.
+    """
     user_data = read_user_data(r'C:\Temp\USERDATA.xlsx')
     excel_file_path = user_data.get('EXCEL_FILE_PATH', r"C:\TEMP\ATP.xlsx")
     api_key = user_data.get('API_KEY', "yourapikey")
