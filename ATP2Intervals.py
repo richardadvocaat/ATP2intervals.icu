@@ -217,6 +217,9 @@ def create_update_or_delete_note_event(start_date, description, color, events, a
     # Provide default description if empty
     if not description:
         description = "Nothing to mention this week."
+        
+    # Add the new sentence at the beginning of the description
+    description = f"Hi {athlete_name}, here is your weekly summary.\n\n" + description
 
     post_data = {
         "category": "NOTE",
@@ -239,27 +242,7 @@ def create_update_or_delete_note_event(start_date, description, color, events, a
     else:
         logging.error(f"Error creating event on {start_date}: {response_post.status_code}")
 
-def get_athlete_profile(athlete_id, username, api_key):
-    """
-    Fetches the athlete's profile information.
 
-    Args:
-        athlete_id (str): Athlete ID.
-        username (str): API username.
-        api_key (str): API key.
-
-    Returns:
-        str: Athlete's first name.
-    """
-    url_profile = f"{BASE_URL}/profile".format(athlete_id=athlete_id)
-    response = requests.get(url_profile, auth=HTTPBasicAuth(username, api_key))
-    if response.status_code == 200:
-        profile = response.json()
-        first_name = profile.get('Name', 'Athlete ohne name')
-        return first_name
-    else:
-        logging.error(f"Error fetching athlete profile: {response.status_code}")
-        return None
 
 def format_focus_items_notes(focus_items_notes):
     """
