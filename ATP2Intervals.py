@@ -49,7 +49,7 @@ sheet_name = os.getenv('SHEET_NAME', "ATP")
 whattodowithrest = "**Stay in bed or on the beach! :-)**"
 note_color = "red"
 note_name = "Weekly Summary"
-parse_delay = .1
+parse_delay = .01
 
 # API endpoints
 url_base = "https://intervals.icu/api/v1/athlete/{athlete_id}"
