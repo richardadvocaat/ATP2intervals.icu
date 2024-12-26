@@ -1,5 +1,8 @@
 # ATP2intervals.icu
 
+--> feedback on last week Load does not work rigth now. it seems it compares the load with today instead of comparing it with the week of the Note is placed. needs some work...
+
+
 This Python script automates the process of sending an annual training plan (ATP) with weekly (TSS, Time and/or distance)-loads for multiple sports. And it makes notes with multiple comments for your athlete to intervals.icu. It reads data from the ATP Excel file made by [Gerald](https://forum.intervals.icu/u/gerald/summary) These files can be found on [Google Drive](https://drive.google.com/drive/folders/1WhIOf2XkGiZBEN_7tX2PSShmF-QXBnBF).
 Find more information about ATP on the [intervals.icu forum](https://forum.intervals.icu/t/apps-in-excel-a-guide-to-getting-started/20844).
 
