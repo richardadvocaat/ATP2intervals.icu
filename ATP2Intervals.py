@@ -2,31 +2,24 @@ import logging
 import pandas as pd
 import requests
 from requests.auth import HTTPBasicAuth
-import time as time_module  # Rename the time module to avoid conflict
+import time as time_module
 
-# Configure logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(level)s - %(message)s')
 
-# Function to format activity name to camel case
 def format_activity_name(activity):
     return ''.join(word.capitalize() for word in activity.split('_'))
 
-# Function to read user data from an Excel file
 def read_user_data(ATP_file_path, sheet_name="User_Data"):
     df = pd.read_excel(ATP_file_path, sheet_name=sheet_name)
     user_data = df.set_index('Key').to_dict()['Value']
     return user_data
 
-# variables
 ATP_sheet_name = "ATP_data"
 ATP_file_path = r'C:\TEMP\Intervals_API_Tools_Office365_v1.6_ATP2intervals.xlsm'
 
-# User variables
-note_name = "Weekly Summary"
 parse_delay = .01
 do_at_rest = "**Stay in bed, on the beach and focus on friends, family and your Märklin trainset.**"
 
-# Read user data from USERDATA.xlsx file
 user_data = read_user_data(ATP_file_path)
 api_key = user_data.get('API_KEY', "yourapikey")
 username = user_data.get('USERNAME', "API_KEY")
@@ -34,12 +27,10 @@ athlete_id = user_data.get('ATHLETE_ID', "athleteid")
 unit_preference = user_data.get('DISTANCE_SYSTEM', "metric")
 note_color = user_data.get('NOTE_COLOR', "red")
 
-# API endpoints
 url_base = "https://intervals.icu/api/v1/athlete/{athlete_id}"
 url_profile = f"https://intervals.icu/api/v1/athlete/{athlete_id}/profile"
 API_headers = {"Content-Type": "application/json"}
 
-# Get athlete's name from intervals.icu
 def get_athlete_name(athlete_id, username, api_key):
     response = requests.get(url_profile, auth=HTTPBasicAuth(username, api_key), headers=API_headers)
     logging.info(f"Response Status Code: {response.status_code}")
@@ -63,28 +54,17 @@ print(f"Athlete First Name: {athlete_name}")
 
 logging.info(f"Using athlete first name: {athlete_name} for further processing.")
 
+note_name = f"{athlete_name}'s weekly notes"
+
 def distance_conversion_factor(unit_preference):
     conversion_factors = {
         "metric": 1000,
         "imperial": 1609.344,
-        "Rijnlands": 3.186 # https://nl.wikipedia.org/wiki/Voet_(lengtemaat)
+        "Rijnlands": 3.186
     }
-    return conversion_factors.get(unit_preference, 1000)  # Default to metric if preference is not found
+    return conversion_factors.get(unit_preference, 1000)
 
-# Function to delete events within a specified date range and category
 def delete_events(athlete_id, username, api_key, oldest_date, newest_date, category, name=None):
-    """
-    Deletes events within a specified date range and category, optionally filtered by name.
-
-    Args:
-        athlete_id (str): Athlete ID.
-        username (str): API username.
-        api_key (str): API key.
-        oldest_date (str): Oldest date in ISO format.
-        newest_date (str): Newest date in ISO format.
-        category (str): Event category.
-        name (str, optional): Event name to filter by.
-    """
     url_get = f"{url_base}/eventsjson".format(athlete_id=athlete_id)
     params = {"oldest": oldest_date, "newest": newest_date, "category": category}
     response_get = requests.get(url_get, headers=API_headers, params=params, auth=HTTPBasicAuth(username, api_key))
@@ -100,24 +80,9 @@ def delete_events(athlete_id, username, api_key, oldest_date, newest_date, categ
             logging.info(f"Deleted {category.lower()} event ID={event_id}")
         else:
             logging.error(f"Error deleting {category.lower()} event ID={event_id}: {response_del.status_code}")
-        time_module.sleep(parse_delay)  # Add delay between each delete event
+        time_module.sleep(parse_delay)
 
-# Function to create, update, or delete a target event based on the provided data
 def create_update_or_delete_target_event(start_date, load_target, time_target, distance_target, activity_type, events, athlete_id, username, api_key):
-    """
-    Creates, updates, or deletes a target event based on the provided data.
-
-    Args:
-        start_date (str): Start date in ISO format.
-        load_target (int): Load target.
-        time_target (int): Time target.
-        distance_target (int): Distance target.
-        activity_type (str): Activity type.
-        events (list): List of existing events.
-        athlete_id (str): Athlete ID.
-        username (str): API username.
-        api_key (str): API key.
-    """
     if load_target is None or load_target == 0:
         logging.info(f"Skipping {activity_type} event on {start_date} due to None or 0 load target.")
         return
@@ -127,7 +92,7 @@ def create_update_or_delete_target_event(start_date, load_target, time_target, d
     distance_target = distance_target or 0
 
     if activity_type in ["Ride", "Run"]:
-       distance_target *= distance_conversion_factor(unit_preference)
+        distance_target *= distance_conversion_factor(unit_preference)
 
     post_data = {
         "load_target": load_target,
@@ -172,25 +137,12 @@ def create_update_or_delete_target_event(start_date, load_target, time_target, d
                 logging.info(f"New event created for {activity_type} on {start_date}!")
             else:
                 logging.error(f"Error creating event for {activity_type} on {start_date}: {response_post.status_code}")
-            time_module.sleep(parse_delay)  # Add delay between each add event
+            time_module.sleep(parse_delay)
 
-# Function to create, update, or delete a note event based on the provided data
 def create_update_or_delete_note_event(start_date, description, color, events, athlete_id, username, api_key):
-    """
-    Creates, updates, or deletes a note event based on the provided data.
-
-    Args:
-        start_date (str): Start date in ISO format.
-        description (str): Event description.
-        color (str): Note color.
-        events (list): List of existing events.
-        athlete_id (str): Athlete ID.
-        username (str): API username.
-        api_key (str): API key.
-    """
     end_date = start_date
 
-    description = populate_description(description)  # Use the new function to populate the description
+    description = populate_description(description)
 
     post_data = {
         "category": "NOTE",
@@ -212,24 +164,13 @@ def create_update_or_delete_note_event(start_date, description, color, events, a
         logging.info(f"New event created on {start_date}!")
     else:
         logging.error(f"Error creating event on {start_date}: {response_post.status_code}")
-        time_module.sleep(parse_delay)  # Add delay between requests
+        time_module.sleep(parse_delay)
 
-# Function to format focus items into a readable list
 def format_focus_items_notes(focus_items_notes):
-    """
-    Formats focus items into a readable list.
-
-    Args:
-        focus_items_notes (list): List of focus items.
-
-    Returns:
-        str: Formatted focus items.
-    """
     if len(focus_items_notes) > 1:
         return ', '.join(focus_items_notes[:-1]) + ' and ' + focus_items_notes[-1]
     return ''.join(focus_items_notes)
 
-# Function to populate the description
 def populate_description(description):
     if not description:
         description = "Nothing to mention this week."
@@ -237,22 +178,6 @@ def populate_description(description):
     description = f"Hi **{athlete_name}**, here is your weekly summary:\n\n" + description
     return description
 
-# Function to format focus items into a readable list
-def format_focus_items_notes(focus_items_notes):
-    """
-    Formats focus items into a readable list.
-
-    Args:
-        focus_items_notes (list): List of focus items.
-
-    Returns:
-        str: Formatted focus items.
-    """
-    if len(focus_items_notes) > 1:
-        return ', '.join(focus_items_notes[:-1]) + ' and ' + focus_items_notes[-1]
-    return ''.join(focus_items_notes)
-
-# Function to handle period description
 def add_period_description(row, description):
     period = row['period'] if not pd.isna(row['period']) else ""
     if period:
@@ -261,14 +186,12 @@ def add_period_description(row, description):
             description += f"- {do_at_rest}\n\n"
     return description
 
-# Function to handle test description
 def add_test_description(row, description):
     test = row['test'] if not pd.isna(row['test']) else ""
     if test:
         description += f"- Do the following test(s) this week: **{test}**.\n\n"
     return description
 
-# Function to handle focus description
 def add_focus_description(row, description):
     focus_columns = [
         'Aerobic Endurance', 'Muscular force', 'Speed Skills',
@@ -282,7 +205,6 @@ def add_focus_description(row, description):
         description += "- You don't have to focus on specific workouts this week.\n\n"
     return description
 
-# Function to handle race focus description
 def add_race_focus_description(row, description):
     race_cat = str(row.get('cat', '')).upper()
     race_name = row.get('race', '').strip()
@@ -294,7 +216,6 @@ def add_race_focus_description(row, description):
         description += f"- Use the **{race_name}** as a hard effort training or just having fun!\n\n"
     return description
 
-# Function to handle next race description
 def add_next_race_description(index, df, week, description):
     next_race = None
     for i in range(index + 1, len(df)):
@@ -317,7 +238,6 @@ def add_next_race_description(index, df, week, description):
             description += f"- Upcoming race: **{next_race_name}** (a **{next_race_cat}**-event) within **{weeks_to_go}** weeks on {next_race_day} {next_race_dayofmonth} {next_race_month}.\n\n "    
     return description
 
-# Main function to execute the script logic
 def main():
     df = pd.read_excel(ATP_file_path, sheet_name=ATP_sheet_name)
     df.fillna(0, inplace=True)
@@ -354,7 +274,7 @@ def main():
                 if col.endswith('_load'):
                     activity = format_activity_name(col.split('_load')[0])
                     create_update_or_delete_target_event(start_date, 0, 0, 0, activity, events, athlete_id, username, api_key)
-            time_module.sleep(parse_delay)  # Add delay between each loop iteration for target events
+            time_module.sleep(parse_delay)
 
     description_added = {}
     for index, row in df.iterrows():
@@ -365,7 +285,7 @@ def main():
         description = add_test_description(row, description)
         description = add_focus_description(row, description)
         race_focus_description = add_race_focus_description(row, description)
-        if race_focus_description == description:  # If race focus description didn't change
+        if race_focus_description == description:
             description = add_next_race_description(index, df, week, description)
         else:
             description = race_focus_description
@@ -376,8 +296,7 @@ def main():
         if description.strip() and not description_added[week]:
             create_update_or_delete_note_event(start_date, description, note_color, events, athlete_id, username, api_key)
             description_added[week] = True
-        time_module.sleep(parse_delay)  # Add delay between each loop iteration for note events
+        time_module.sleep(parse_delay)
 
 if __name__ == "__main__":
     main()
-    
