@@ -3,6 +3,7 @@ import pandas as pd
 import requests
 from requests.auth import HTTPBasicAuth
 import time as time_module
+from datetime import datetime, timedelta
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(level)s - %(message)s')
 
@@ -29,6 +30,7 @@ note_color = user_data.get('NOTE_COLOR', "red")
 
 url_base = "https://intervals.icu/api/v1/athlete/{athlete_id}"
 url_profile = f"https://intervals.icu/api/v1/athlete/{athlete_id}/profile"
+url_activities = f"https://intervals.icu/api/v1/athlete/{athlete_id}/activities"
 API_headers = {"Content-Type": "application/json"}
 
 def get_athlete_name(athlete_id, username, api_key):
@@ -63,6 +65,20 @@ def distance_conversion_factor(unit_preference):
         "Rijnlands": 3.186
     }
     return conversion_factors.get(unit_preference, 1000)
+
+def get_last_week_load(athlete_id, username, api_key):
+    today = datetime.now()
+    start_date = (today - timedelta(days=today.weekday() + 7)).strftime("%Y-%m-%d")
+    end_date = (today - timedelta(days=today.weekday() + 1)).strftime("%Y-%m-%d")
+    params = {"start": start_date, "end": end_date}
+    response = requests.get(url_activities, headers=API_headers, params=params, auth=HTTPBasicAuth(username, api_key))
+    if response.status_code == 200:
+        activities = response.json()
+        weekly_load = sum(activity.get('load', 0) for activity in activities)
+        return weekly_load
+    else:
+        logging.error(f"Error fetching activities: {response.status_code}")
+        return 0
 
 def delete_events(athlete_id, username, api_key, oldest_date, newest_date, category, name=None):
     url_get = f"{url_base}/eventsjson".format(athlete_id=athlete_id)
@@ -238,6 +254,31 @@ def add_next_race_description(index, df, week, description):
             description += f"- Upcoming race: **{next_race_name}** (a **{next_race_cat}**-event) within **{weeks_to_go}** weeks on {next_race_day} {next_race_dayofmonth} {next_race_month}.\n\n "    
     return description
 
+def add_load_check_description(row, weekly_load_api, description):
+    sheet_load = row['Total_Load'] if 'Total_Load' in row else 0
+    delta = weekly_load_api - sheet_load
+
+    if sheet_load == 0 and weekly_load_api == 0:
+        feedback = '--.'
+    elif weekly_load_api == 0:
+        feedback = "Nothing done?"
+    elif sheet_load == 0:
+        feedback = "There was nothing to do...?"
+    elif delta == 0:
+        feedback = "Perfect!"
+    elif delta > 0.2 * sheet_load:
+        feedback = "Too much."
+    elif delta < -0.2 * sheet_load:
+        feedback = "Too little."
+    else:
+        feedback = "Good."
+    if sheet_load == 0 and weekly_load_api == 0:
+        description += f"\n\nFeedback: {feedback}"
+    elif weekly_load_api == 0:
+        description += f"\n\nYour total load for the last week was: {weekly_load_api}. Compared to the planned load: {sheet_load}. Feedback: {feedback}"
+    
+    return description
+
 def main():
     df = pd.read_excel(ATP_file_path, sheet_name=ATP_sheet_name)
     df.fillna(0, inplace=True)
@@ -252,6 +293,8 @@ def main():
     params = {"oldest": oldest_date, "newest": newest_date, "category": "TARGET,NOTE", "resolve": "false"}
     response_get = requests.get(url_get, headers=API_headers, params=params, auth=HTTPBasicAuth(username, api_key))
     events = response_get.json() if response_get.status_code == 200 else []
+
+    weekly_load_api = get_last_week_load(athlete_id, username, api_key)
 
     for index, row in df.iterrows():
         start_date = row['start_date_local'].strftime("%Y-%m-%dT00:00:00")
@@ -276,7 +319,7 @@ def main():
                     create_update_or_delete_target_event(start_date, 0, 0, 0, activity, events, athlete_id, username, api_key)
             time_module.sleep(parse_delay)
 
-    description_added = {}
+    note_description_added = {}
     for index, row in df.iterrows():
         start_date = row['start_date_local'].strftime("%Y-%m-%dT00:00:00")
         week = row['start_date_local'].isocalendar()[1]
@@ -289,14 +332,16 @@ def main():
             description = add_next_race_description(index, df, week, description)
         else:
             description = race_focus_description
+        description = add_load_check_description(row, weekly_load_api, description)
+            
+        if week not in note_description_added:
+            note_description_added[week] = False
 
-        if week not in description_added:
-            description_added[week] = False
-
-        if description.strip() and not description_added[week]:
+        if description.strip() and not note_description_added[week]:
             create_update_or_delete_note_event(start_date, description, note_color, events, athlete_id, username, api_key)
-            description_added[week] = True
+            note_description_added[week] = True
         time_module.sleep(parse_delay)
 
 if __name__ == "__main__":
     main()
+    
