@@ -95,14 +95,22 @@ def get_weekly_loads(athlete_id, username, api_key):
     weekly_loads = calculate_weekly_loads(wellness_data)
     return weekly_loads 
   
-def get_last_week_load(athlete_id, username, api_key):
+def get_last_week_load(athlete_id, username, api_key, note_event_date):
     wellness_data = get_wellness_data(athlete_id, username, api_key)
     weekly_loads = calculate_weekly_loads(wellness_data)
     
-    today = datetime.now()
-    last_week = (today - timedelta(days=today.weekday() + 7)).isocalendar()[1]
+    note_date = datetime.strptime(note_event_date, "%Y-%m-%d")
+    last_week_start = note_date - timedelta(days=note_date.weekday() + 7)
+    last_week_end = last_week_start + timedelta(days=6)
     
-    return weekly_loads.get(last_week, {'ctlLoad': 0, 'atlLoad': 0})
+    last_week_load = {'ctlLoad': 0, 'atlLoad': 0}
+    for entry in wellness_data:
+        date = datetime.strptime(entry['id'], "%Y-%m-%d")
+        if last_week_start <= date <= last_week_end:
+            last_week_load['ctlLoad'] += entry.get('ctlLoad', 0)
+            last_week_load['atlLoad'] += entry.get('atlLoad', 0)
+    
+    return last_week_load
 
 def delete_events(athlete_id, username, api_key, oldest_date, newest_date, category, name=None):
     url_get = f"{url_base}/eventsjson".format(athlete_id=athlete_id)
