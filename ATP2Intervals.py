@@ -71,11 +71,16 @@ def get_wellness_data(athlete_id, username, api_key):
     url_wellness = f"https://intervals.icu/api/v1/athlete/{athlete_id}/wellness"
     response = requests.get(url_wellness, headers=API_headers, auth=HTTPBasicAuth(username, api_key))
     if response.status_code == 200:
-        return response.json()
+        data = response.json()
+        # Filter to include only date, ctlLoad, and atlLoad
+        filtered_data = [{ "id": entry["id"], "ctlLoad": entry.get("ctlLoad", 0), "atlLoad": entry.get("atlLoad", 0) } for entry in data]
+        return filtered_data
     else:
         logging.error(f"Error fetching wellness data: {response.status_code}")
         return []
-    
+        # Fetch and print wellness data
+        wellness_data = get_wellness_data(athlete_id, username, api_key)
+        
 def calculate_weekly_loads(wellness_data):
     weekly_loads = {}
     for entry in wellness_data:
@@ -378,6 +383,6 @@ def main():
             create_update_or_delete_note_event(start_date, description, note_color, events, athlete_id, username, api_key)
             description_added[week] = True
         time_module.sleep(parse_delay)
-
+        
 if __name__ == "__main__":
     main()
