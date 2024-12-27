@@ -66,19 +66,36 @@ def distance_conversion_factor(unit_preference):
     }
     return conversion_factors.get(unit_preference, 1000)
 
-def get_last_week_load(athlete_id, username, api_key):
-    today = datetime.now()
-    start_date = (today - timedelta(days=today.weekday() + 7)).strftime("%Y-%m-%d")
-    end_date = (today - timedelta(days=today.weekday() + 1)).strftime("%Y-%m-%d")
-    params = {"start": start_date, "end": end_date}
-    response = requests.get(url_activities, headers=API_headers, params=params, auth=HTTPBasicAuth(username, api_key))
+def get_wellness_data(athlete_id, username, api_key):
+    url_wellness = f"https://intervals.icu/api/v1/athlete/{athlete_id}/wellness"
+    response = requests.get(url_wellness, headers=API_headers, auth=HTTPBasicAuth(username, api_key))
     if response.status_code == 200:
-        activities = response.json()
-        weekly_load = sum(activity.get('load', 0) for activity in activities)
-        return weekly_load
+        return response.json()
     else:
-        logging.error(f"Error fetching activities: {response.status_code}")
-        return 0
+        logging.error(f"Error fetching wellness data: {response.status_code}")
+        return []
+
+def calculate_weekly_loads(wellness_data):
+    weekly_loads = {}
+    for entry in wellness_data:
+        if 'date' not in entry:
+            continue
+        date = datetime.strptime(entry['date'], "%Y-%m-%d")
+        week = date.isocalendar()[1]
+        if week not in weekly_loads:
+            weekly_loads[week] = {'ctlLoad': 0, 'atlLoad': 0}
+        weekly_loads[week]['ctlLoad'] += entry.get('ctlLoad', 0)
+        weekly_loads[week]['atlLoad'] += entry.get('atlLoad', 0)
+    return weekly_loads
+
+def get_last_week_load(athlete_id, username, api_key):
+    wellness_data = get_wellness_data(athlete_id, username, api_key)
+    weekly_loads = calculate_weekly_loads(wellness_data)
+    
+    today = datetime.now()
+    last_week = (today - timedelta(days=today.weekday() + 7)).isocalendar()[1]
+    
+    return weekly_loads.get(last_week, {'ctlLoad': 0, 'atlLoad': 0})
 
 def delete_events(athlete_id, username, api_key, oldest_date, newest_date, category, name=None):
     url_get = f"{url_base}/eventsjson".format(athlete_id=athlete_id)
@@ -254,28 +271,29 @@ def add_next_race_description(index, df, week, description):
             description += f"- Upcoming race: **{next_race_name}** (a **{next_race_cat}**-event) within **{weeks_to_go}** weeks on {next_race_day} {next_race_dayofmonth} {next_race_month}.\n\n "    
     return description
 
-def add_load_check_description(row, weekly_load_api, description):
+def add_load_check_description(row, weekly_loads, description):
     sheet_load = row['Total_Load'] if 'Total_Load' in row else 0
-    delta = weekly_load_api - sheet_load
+    ctl_load = weekly_loads['ctlLoad']
+    atl_load = weekly_loads['atlLoad']
+    
+    delta_ctl = ctl_load - sheet_load
+    delta_atl = atl_load - sheet_load
 
-    if sheet_load == 0 and weekly_load_api == 0:
+    feedback = "Good."
+    if sheet_load == 0 and ctl_load == 0 and atl_load == 0:
         feedback = '--.'
-    elif weekly_load_api == 0:
+    elif ctl_load == 0 and atl_load == 0:
         feedback = "Nothing done?"
     elif sheet_load == 0:
         feedback = "There was nothing to do...?"
-    elif delta == 0:
+    elif delta_ctl == 0 or delta_atl == 0:
         feedback = "Perfect!"
-    elif delta > 0.2 * sheet_load:
+    elif delta_ctl > 0.2 * sheet_load or delta_atl > 0.2 * sheet_load:
         feedback = "Too much."
-    elif delta < -0.2 * sheet_load:
+    elif delta_ctl < -0.2 * sheet_load or delta_atl < -0.2 * sheet_load:
         feedback = "Too little."
-    else:
-        feedback = "Good."
-    if sheet_load == 0 and weekly_load_api == 0:
-        description += f"\n\nFeedback: {feedback}"
-    elif weekly_load_api == 0:
-        description += f"\n\nYour total load for the last week was: {weekly_load_api}. Compared to the planned load: {sheet_load}. Feedback: {feedback}"
+
+    description += f"\n\nYour total ctlLoad for the last week was: {ctl_load}. Your total atlLoad for the last week was: {atl_load}. Compared to the planned load: {sheet_load}. Feedback: {feedback}"
     
     return description
 
@@ -294,7 +312,7 @@ def main():
     response_get = requests.get(url_get, headers=API_headers, params=params, auth=HTTPBasicAuth(username, api_key))
     events = response_get.json() if response_get.status_code == 200 else []
 
-    weekly_load_api = get_last_week_load(athlete_id, username, api_key)
+    weekly_loads = get_last_week_load(athlete_id, username, api_key)
 
     for index, row in df.iterrows():
         start_date = row['start_date_local'].strftime("%Y-%m-%dT00:00:00")
@@ -317,9 +335,9 @@ def main():
                 if col.endswith('_load'):
                     activity = format_activity_name(col.split('_load')[0])
                     create_update_or_delete_target_event(start_date, 0, 0, 0, activity, events, athlete_id, username, api_key)
-            time_module.sleep(parse_delay)
+        time_module.sleep(parse_delay)
 
-    note_description_added = {}
+    description_added = {}
     for index, row in df.iterrows():
         start_date = row['start_date_local'].strftime("%Y-%m-%dT00:00:00")
         week = row['start_date_local'].isocalendar()[1]
@@ -332,14 +350,14 @@ def main():
             description = add_next_race_description(index, df, week, description)
         else:
             description = race_focus_description
-        description = add_load_check_description(row, weekly_load_api, description)
-            
-        if week not in note_description_added:
-            note_description_added[week] = False
+        description = add_load_check_description(row, weekly_loads, description)
 
-        if description.strip() and not note_description_added[week]:
+        if week not in description_added:
+            description_added[week] = False
+
+        if description.strip() and not description_added[week]:
             create_update_or_delete_note_event(start_date, description, note_color, events, athlete_id, username, api_key)
-            note_description_added[week] = True
+            description_added[week] = True
         time_module.sleep(parse_delay)
 
 if __name__ == "__main__":
