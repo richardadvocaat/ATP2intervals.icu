@@ -6,6 +6,7 @@ import time as time_module
 from datetime import datetime, timedelta
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(level)s - %(message)s')
+logging.basicConfig(level=logging.DEBUG, format='%(asctime)s - %(levelname)s - %(message)s')
 
 def format_activity_name(activity):
     return ''.join(word.capitalize() for word in activity.split('_'))
@@ -75,11 +76,6 @@ def get_wellness_data(athlete_id, username, api_key):
         logging.error(f"Error fetching wellness data: {response.status_code}")
         return []
     
-def get_weekly_loads(athlete_id, username, api_key):
-    wellness_data = get_wellness_data(athlete_id, username, api_key)
-    weekly_loads = calculate_weekly_loads(wellness_data)
-    return weekly_loads
-
 def calculate_weekly_loads(wellness_data):
     weekly_loads = {}
     for entry in wellness_data:
@@ -91,8 +87,14 @@ def calculate_weekly_loads(wellness_data):
             weekly_loads[week] = {'ctlLoad': 0, 'atlLoad': 0}
         weekly_loads[week]['ctlLoad'] += entry.get('ctlLoad', 0)
         weekly_loads[week]['atlLoad'] += entry.get('atlLoad', 0)
+        logging.debug(f"Week {week}: ctlLoad={weekly_loads[week]['ctlLoad']}, atlLoad={weekly_loads[week]['atlLoad']}")
     return weekly_loads
 
+def get_weekly_loads(athlete_id, username, api_key):
+    wellness_data = get_wellness_data(athlete_id, username, api_key)
+    weekly_loads = calculate_weekly_loads(wellness_data)
+    return weekly_loads 
+  
 def get_last_week_load(athlete_id, username, api_key):
     wellness_data = get_wellness_data(athlete_id, username, api_key)
     weekly_loads = calculate_weekly_loads(wellness_data)
@@ -356,7 +358,10 @@ def main():
             description = add_next_race_description(index, df, week, description)
         else:
             description = race_focus_description
-        description = add_load_check_description(row, weekly_loads.get(week, {'ctlLoad': 0, 'atlLoad': 0}), description)
+        if week == 52:
+            description = add_load_check_description(row, weekly_loads.get(51, {'ctlLoad': 0, 'atlLoad': 0}), description)
+        else:
+            description = add_load_check_description(row, weekly_loads.get(week, {'ctlLoad': 0, 'atlLoad': 0}), description)
 
         if week not in description_added:
             description_added[week] = False
@@ -367,4 +372,4 @@ def main():
         time_module.sleep(parse_delay)
 
 if __name__ == "__main__":
-    main()    
+    main()
