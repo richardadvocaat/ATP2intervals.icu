@@ -74,13 +74,18 @@ def get_wellness_data(athlete_id, username, api_key):
     else:
         logging.error(f"Error fetching wellness data: {response.status_code}")
         return []
+    
+def get_weekly_loads(athlete_id, username, api_key):
+    wellness_data = get_wellness_data(athlete_id, username, api_key)
+    weekly_loads = calculate_weekly_loads(wellness_data)
+    return weekly_loads
 
 def calculate_weekly_loads(wellness_data):
     weekly_loads = {}
     for entry in wellness_data:
-        if 'date' not in entry:
+        if 'id' not in entry:
             continue
-        date = datetime.strptime(entry['date'], "%Y-%m-%d")
+        date = datetime.strptime(entry['id'], "%Y-%m-%d")
         week = date.isocalendar()[1]
         if week not in weekly_loads:
             weekly_loads[week] = {'ctlLoad': 0, 'atlLoad': 0}
@@ -312,10 +317,11 @@ def main():
     response_get = requests.get(url_get, headers=API_headers, params=params, auth=HTTPBasicAuth(username, api_key))
     events = response_get.json() if response_get.status_code == 200 else []
 
-    weekly_loads = get_last_week_load(athlete_id, username, api_key)
+    weekly_loads = get_weekly_loads(athlete_id, username, api_key)
 
     for index, row in df.iterrows():
         start_date = row['start_date_local'].strftime("%Y-%m-%dT00:00:00")
+        week = row['start_date_local'].isocalendar()[1]
         for col in df.columns:
             if col.endswith('_load'):
                 activity = format_activity_name(col.split('_load')[0])
@@ -335,7 +341,7 @@ def main():
                 if col.endswith('_load'):
                     activity = format_activity_name(col.split('_load')[0])
                     create_update_or_delete_target_event(start_date, 0, 0, 0, activity, events, athlete_id, username, api_key)
-        time_module.sleep(parse_delay)
+            time_module.sleep(parse_delay)
 
     description_added = {}
     for index, row in df.iterrows():
@@ -350,7 +356,7 @@ def main():
             description = add_next_race_description(index, df, week, description)
         else:
             description = race_focus_description
-        description = add_load_check_description(row, weekly_loads, description)
+        description = add_load_check_description(row, weekly_loads.get(week, {'ctlLoad': 0, 'atlLoad': 0}), description)
 
         if week not in description_added:
             description_added[week] = False
@@ -361,5 +367,4 @@ def main():
         time_module.sleep(parse_delay)
 
 if __name__ == "__main__":
-    main()
-    
+    main()    
