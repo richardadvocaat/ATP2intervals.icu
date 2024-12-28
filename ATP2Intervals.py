@@ -316,9 +316,29 @@ def get_previous_week_sheet_load(df, previous_year, previous_week):
         return calculate_total_load(previous_week_data.iloc[0])
     return 0
 
+def calculate_weekly_loads(wellness_data):
+    weekly_loads = {}
+    for entry in wellness_data:
+        if 'id' not in entry:
+            continue
+        date = datetime.strptime(entry['id'], "%Y-%m-%d")
+        week = date.isocalendar()[1]
+        year = date.isocalendar()[0]
+        year_week = f"{year}-{week}"
+        
+        if year_week not in weekly_loads:
+            weekly_loads[year_week] = {'ctlLoad': 0, 'atlLoad': 0}
+        
+        weekly_loads[year_week]['ctlLoad'] += round(entry.get('ctlLoad', 0))
+        weekly_loads[year_week]['atlLoad'] += round(entry.get('atlLoad', 0))
+        
+        logging.debug(f"Year-Week {year_week}: ctlLoad={weekly_loads[year_week]['ctlLoad']}, atlLoad={weekly_loads[year_week]['atlLoad']}")
+    
+    return weekly_loads
+
 def add_load_check_description(row, previous_week_loads, previous_week_sheet_load, description):
-    ctl_load = previous_week_loads['ctlLoad']
-    atl_load = previous_week_loads['atlLoad']
+    ctl_load = round(previous_week_loads['ctlLoad'])
+    atl_load = round(previous_week_loads['atlLoad'])
     
     delta_ctl = ctl_load - previous_week_sheet_load
     delta_atl = atl_load - previous_week_sheet_load
@@ -333,13 +353,14 @@ def add_load_check_description(row, previous_week_loads, previous_week_sheet_loa
     elif delta_ctl == 0 or delta_atl == 0:
         feedback = "Perfect!"
     elif delta_ctl > 0.2 * previous_week_sheet_load or delta_atl > 0.2 * previous_week_sheet_load:
-        feedback = "You did too."
+        feedback = "You did too much."
     elif delta_ctl < -0.2 * previous_week_sheet_load or delta_atl < -0.2 * previous_week_sheet_load:
         feedback = "You did too little."
 
-    description += f"\n\nYour total trainingLoad for the last week was: **{ctl_load}**. Compared to the planned load: **{previous_week_sheet_load}**: Feedback: **{feedback}**"
+    description += f"\n\nYour total trainingload for the last week was: **{ctl_load}**. Compared to the planned load: **{previous_week_sheet_load}**. Feedback: **{feedback}**"
     
     return description
+
 
 def main():
     df = pd.read_excel(ATP_file_path, sheet_name=ATP_sheet_name)
