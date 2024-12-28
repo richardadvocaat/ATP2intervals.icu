@@ -88,11 +88,17 @@ def calculate_weekly_loads(wellness_data):
             continue
         date = datetime.strptime(entry['id'], "%Y-%m-%d")
         week = date.isocalendar()[1]
-        if week not in weekly_loads:
-            weekly_loads[week] = {'ctlLoad': 0, 'atlLoad': 0}
-        weekly_loads[week]['ctlLoad'] += entry.get('ctlLoad', 0)
-        weekly_loads[week]['atlLoad'] += entry.get('atlLoad', 0)
-        logging.debug(f"Week {week}: ctlLoad={weekly_loads[week]['ctlLoad']}, atlLoad={weekly_loads[week]['atlLoad']}")
+        year = date.isocalendar()[0]
+        year_week = f"{year}-{week}"
+        
+        if year_week not in weekly_loads:
+            weekly_loads[year_week] = {'ctlLoad': 0, 'atlLoad': 0}
+        
+        weekly_loads[year_week]['ctlLoad'] += entry.get('ctlLoad', 0)
+        weekly_loads[year_week]['atlLoad'] += entry.get('atlLoad', 0)
+        
+        logging.debug(f"Year-Week {year_week}: ctlLoad={weekly_loads[year_week]['ctlLoad']}, atlLoad={weekly_loads[year_week]['atlLoad']}")
+    
     return weekly_loads
 
 def get_weekly_loads(athlete_id, username, api_key):
