@@ -205,11 +205,11 @@ def create_update_or_delete_target_event(start_date, load_target, time_target, d
                 logging.error(f"Error creating event for {activity_type} on {start_date}: {response_post.status_code}")
             time_module.sleep(parse_delay)
 
-def create_update_or_delete_note_event(start_date, description, color, events, athlete_id, username, api_key, current_week):
+def create_update_or_delete_note_event(start_date, description, color, events, athlete_id, username, api_key, current_week, first_a_event):
     end_date = start_date
     note_ATP_name = f"Weekly training and focus summary of your ATP for week {current_week}"
 
-    description = populate_description(description)
+    description = populate_description(description, first_a_event)
 
     post_data = {
         "category": "NOTE",
@@ -232,23 +232,33 @@ def create_update_or_delete_note_event(start_date, description, color, events, a
     else:
         logging.error(f"Error creating event on {start_date}: {response_post.status_code}")
     time_module.sleep(parse_delay)
+    
+def get_first_a_event(df):
+    for index, row in df.iterrows():
+        if str(row.get('cat', '')).upper() == 'A' and row.get('race', '').strip():
+            return row.get('race', '').strip()
+    return None
 
 def format_focus_items_notes(focus_items_notes):
     if len(focus_items_notes) > 1:
         return ', '.join(focus_items_notes[:-1]) + ' and ' + focus_items_notes[-1]
     return ''.join(focus_items_notes)
 
-def populate_description(description):
+def populate_description(description, first_a_event):
     if not description:
         description = "Nothing to mention this week."
-        
+    
+    if first_a_event:
+        description = f"- This (part) of the plan aims for **{first_a_event}**\n\n. " + description
+
     description = f"Hi **{athlete_name}**, here is your weekly ATP summary:\n\n" + description
     return description
+
 
 def add_period_description(row, description):
     period = row['period'] if not pd.isna(row['period']) else ""
     if period:
-        description += f"- You are in the **{period}** period of your trainingplan.\n\n"
+        description = f"- You are in the **{period}** period of your trainingplan.\n\n "
         if period == "Rest":
             description += f"- {do_at_rest}\n\n"
     return description
@@ -315,6 +325,9 @@ def main():
     oldest_date = df['start_date_local'].min()
     newest_date = df['start_date_local'].max()
 
+    # Get the first A-event
+    first_a_event = get_first_a_event(df)
+
     # Delete existing NOTE_EVENTS with the same note_ATP_name before processing new ones
     delete_events(athlete_id, username, api_key, oldest_date.strftime("%Y-%m-%dT00:00:00"), newest_date.strftime("%Y-%m-%dT00:00:00"), "NOTE", note_ATP_name)
 
@@ -346,7 +359,7 @@ def main():
             description_added[week] = False
 
         if description.strip() and not description_added[week]:
-            create_update_or_delete_note_event(start_date, description, note_ATP_color, events, athlete_id, username, api_key, week)
+            create_update_or_delete_note_event(start_date, description, note_ATP_color, events, athlete_id, username, api_key, week, first_a_event)
             description_added[week] = True
         time_module.sleep(parse_delay)
         
