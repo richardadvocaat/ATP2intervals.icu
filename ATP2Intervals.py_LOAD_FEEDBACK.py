@@ -265,8 +265,13 @@ def main():
     weekly_loads = get_weekly_loads(athlete_id, username, api_key, oldest_date, newest_date)
 
     description_added = {}
+    today = datetime.now().date()
     for index, row in df.iterrows():
-        start_date = row['start_date_local'].strftime("%Y-%m-%dT00:00:00")
+        start_date = row['start_date_local'].date()
+        if start_date > today:
+            continue
+
+        start_date_str = start_date.strftime("%Y-%m-%dT00:00:00")
         week = row['start_date_local'].isocalendar()[1]
         year = row['start_date_local'].isocalendar()[0]
         previous_year, previous_week = get_previous_week(year, week)
@@ -283,7 +288,7 @@ def main():
             description_added[week] = False
 
         if description.strip() and not description_added[week]:
-            create_update_or_delete_note_event(start_date, description, note_FEEDBACK_color, events, athlete_id, username, api_key, previous_week)
+            create_update_or_delete_note_event(start_date_str, description, note_FEEDBACK_color, events, athlete_id, username, api_key, previous_week)
             description_added[week] = True
         time_module.sleep(parse_delay)
         
