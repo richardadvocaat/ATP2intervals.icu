@@ -205,8 +205,9 @@ def create_update_or_delete_target_event(start_date, load_target, time_target, d
                 logging.error(f"Error creating event for {activity_type} on {start_date}: {response_post.status_code}")
             time_module.sleep(parse_delay)
 
-def create_update_or_delete_note_event(start_date, description, color, events, athlete_id, username, api_key):
+def create_update_or_delete_note_event(start_date, description, color, events, athlete_id, username, api_key, current_week):
     end_date = start_date
+    note_ATP_name = f"Weekly training and focus summary of your ATP for week {current_week}"
 
     description = populate_description(description)
 
@@ -230,7 +231,7 @@ def create_update_or_delete_note_event(start_date, description, color, events, a
         logging.info(f"New event created on {start_date}!")
     else:
         logging.error(f"Error creating event on {start_date}: {response_post.status_code}")
-        time_module.sleep(parse_delay)
+    time_module.sleep(parse_delay)
 
 def format_focus_items_notes(focus_items_notes):
     if len(focus_items_notes) > 1:
@@ -345,7 +346,7 @@ def main():
             description_added[week] = False
 
         if description.strip() and not description_added[week]:
-            create_update_or_delete_note_event(start_date, description, note_ATP_color, events, athlete_id, username, api_key)
+            create_update_or_delete_note_event(start_date, description, note_ATP_color, events, athlete_id, username, api_key, week)
             description_added[week] = True
         time_module.sleep(parse_delay)
         
