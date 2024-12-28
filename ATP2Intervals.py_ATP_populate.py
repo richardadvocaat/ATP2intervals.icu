@@ -251,7 +251,7 @@ def populate_description(description, first_a_event):
         description = "Nothing to mention this week."
     
     if first_a_event:
-        description = f"- This (part) of the plan aims for **{first_a_event}**.\n\n " + description
+        description = f"- This (part) of the plan aims for **{first_a_event}**.\n\n" + description
 
     description = f"Hi **{athlete_name}**, here is your weekly ATP summary:\n\n" + description
     return description
