@@ -233,9 +233,11 @@ def create_update_or_delete_note_event(start_date, description, color, events, a
         logging.error(f"Error creating event on {start_date}: {response_post.status_code}")
     time_module.sleep(parse_delay)
     
-def get_first_a_event(df):
+def get_first_a_event(df, note_event_date):
+    note_date = datetime.strptime(note_event_date, "%Y-%m-%dT00:00:00")
     for index, row in df.iterrows():
-        if str(row.get('cat', '')).upper() == 'A' and row.get('race', '').strip():
+        event_date = pd.to_datetime(row.get('start_date_local'))
+        if event_date > note_date and str(row.get('cat', '')).upper() == 'A' and row.get('race', '').strip():
             return row.get('race', '').strip()
     return None
 
@@ -324,9 +326,6 @@ def main():
     oldest_date = df['start_date_local'].min()
     newest_date = df['start_date_local'].max()
 
-    # Get the first A-event
-    first_a_event = get_first_a_event(df)
-
     # Delete existing NOTE_EVENTS with the same note_ATP_name prefix before processing new ones
     delete_events_with_prefix(athlete_id, username, api_key, oldest_date.strftime("%Y-%m-%dT00:00:00"), newest_date.strftime("%Y-%m-%dT00:00:00"), "NOTE", "Weekly training and focus summary of your ATP")
 
@@ -342,6 +341,8 @@ def main():
         start_date = row['start_date_local'].strftime("%Y-%m-%dT00:00:00")
         week = row['start_date_local'].isocalendar()[1]
         year = row['start_date_local'].isocalendar()[0]
+
+        first_a_event = get_first_a_event(df, start_date)
                  
         description = ""
         description = add_period_description(row, description)
