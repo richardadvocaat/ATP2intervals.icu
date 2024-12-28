@@ -21,6 +21,8 @@ ATP_file_path = r'C:\TEMP\Intervals_API_Tools_Office365_v1.6_ATP2intervals.xlsm'
 
 parse_delay = .01
 do_at_rest = "**Stay in bed, on the beach and focus on friends, family and your Märklin trainset.**"
+note_FEEDBACK_name = "Weekly training and focus summary"
+note_ATP_name = "Weekly training and focus summary of your ATP"
 
 user_data = read_user_data(ATP_file_path)
 api_key = user_data.get('API_KEY', "yourapikey")
@@ -58,7 +60,7 @@ print(f"Athlete First Name: {athlete_name}")
 
 logging.info(f"Using athlete first name: {athlete_name} for further processing.")
 
-note_FEEDBACK_name = f"Your weekly training and focus summary"
+
 
 def distance_conversion_factor(unit_preference):
     conversion_factors = {
@@ -228,7 +230,7 @@ def add_load_check_description(row, previous_week_loads, previous_week_sheet_loa
 
     feedback = "Good."
     if previous_week_sheet_load == 0 and ctl_load == 0 and atl_load == 0:
-        feedback = '--.'
+        feedback = 'Nothing to check now.'
     elif ctl_load == 0 and atl_load == 0:
         feedback = "Nothing done?"
     elif previous_week_sheet_load == 0:
@@ -254,8 +256,8 @@ def main():
     oldest_date = df['start_date_local'].min()
     newest_date = df['start_date_local'].max()
 
-    # Delete existing NOTE_EVENTS before processing new ones
-    delete_events(athlete_id, username, api_key, oldest_date.strftime("%Y-%m-%dT00:00:00"), newest_date.strftime("%Y-%m-%dT00:00:00"), "NOTE")
+    # Delete existing NOTE_EVENTS with the same note_FEEDBACK_name before processing new ones
+    delete_events(athlete_id, username, api_key, oldest_date.strftime("%Y-%m-%dT00:00:00"), newest_date.strftime("%Y-%m-%dT00:00:00"), "NOTE", note_FEEDBACK_name)
 
     url_get = f"{url_base}/eventsjson".format(athlete_id=athlete_id)
     params = {"oldest": oldest_date.strftime("%Y-%m-%dT00:00:00"), "newest": newest_date.strftime("%Y-%m-%dT00:00:00"), "category": "TARGET,NOTE", "resolve": "false"}
@@ -272,9 +274,9 @@ def main():
         previous_year, previous_week = get_previous_week(year, week)
         previous_year_week = f"{previous_year}-{previous_week}"
         year_week = f"{year}-{week}"
-        
+                 
         description = ""
-                
+                 
         previous_week_loads = weekly_loads.get(previous_year_week, {'ctlLoad': 0, 'atlLoad': 0})
         previous_week_sheet_load = get_previous_week_sheet_load(df, previous_year, previous_week)  # Define it here
         description = add_load_check_description(row, previous_week_loads, previous_week_sheet_load, description)
