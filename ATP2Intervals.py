@@ -308,7 +308,6 @@ def get_previous_week(year, week):
 def calculate_total_load(row):
     return sum(row[col] for col in row.index if col.endswith('_load'))
 
-
 def get_previous_week_sheet_load(df, previous_year, previous_week):
     previous_year_week = f"{previous_year}-{previous_week}"
     previous_week_data = df[(df['year_week'] == previous_year_week)]
@@ -360,7 +359,6 @@ def add_load_check_description(row, previous_week_loads, previous_week_sheet_loa
     description += f"\n\nYour total trainingload for the last week was: **{ctl_load}**. Compared to the planned load: **{previous_week_sheet_load}**. Feedback: **{feedback}**"
     
     return description
-
 
 def main():
     df = pd.read_excel(ATP_file_path, sheet_name=ATP_sheet_name)
