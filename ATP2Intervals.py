@@ -67,19 +67,21 @@ def distance_conversion_factor(unit_preference):
     }
     return conversion_factors.get(unit_preference, 1000)
 
-def get_wellness_data(athlete_id, username, api_key):
+def get_wellness_data(athlete_id, username, api_key, oldest_date, newest_date):
     url_wellness = f"https://intervals.icu/api/v1/athlete/{athlete_id}/wellness"
     response = requests.get(url_wellness, headers=API_headers, auth=HTTPBasicAuth(username, api_key))
     if response.status_code == 200:
         data = response.json()
-        # Filter to include only date, ctlLoad, and atlLoad
-        filtered_data = [{ "id": entry["id"], "ctlLoad": entry.get("ctlLoad", 0), "atlLoad": entry.get("atlLoad", 0) } for entry in data]
+        # Filter to include only date, ctlLoad, and atlLoad within the date range
+        filtered_data = [
+            { "id": entry["id"], "ctlLoad": entry.get("ctlLoad", 0), "atlLoad": entry.get("atlLoad", 0) }
+            for entry in data
+            if oldest_date <= datetime.strptime(entry["id"], "%Y-%m-%d") <= newest_date
+        ]
         return filtered_data
     else:
         logging.error(f"Error fetching wellness data: {response.status_code}")
         return []
-        # Fetch and print wellness data
-        wellness_data = get_wellness_data(athlete_id, username, api_key)
 
 def calculate_weekly_loads(wellness_data):
     weekly_loads = {}
@@ -101,10 +103,10 @@ def calculate_weekly_loads(wellness_data):
     
     return weekly_loads
 
-def get_weekly_loads(athlete_id, username, api_key):
-    wellness_data = get_wellness_data(athlete_id, username, api_key)
+def get_weekly_loads(athlete_id, username, api_key, oldest_date, newest_date):
+    wellness_data = get_wellness_data(athlete_id, username, api_key, oldest_date, newest_date)
     weekly_loads = calculate_weekly_loads(wellness_data)
-    return weekly_loads 
+    return weekly_loads
 
 def get_last_week_load(athlete_id, username, api_key, note_event_date):
     wellness_data = get_wellness_data(athlete_id, username, api_key)
@@ -252,15 +254,15 @@ def main():
     df = pd.read_excel(ATP_file_path, sheet_name=ATP_sheet_name)
     df.fillna(0, inplace=True)
 
-    oldest_date = df['start_date_local'].min().strftime("%Y-%m-%dT00:00:00")
-    newest_date = df['start_date_local'].max().strftime("%Y-%m-%dT00:00:00")
+    oldest_date = df['start_date_local'].min()
+    newest_date = df['start_date_local'].max()
 
     url_get = f"{url_base}/eventsjson".format(athlete_id=athlete_id)
-    params = {"oldest": oldest_date, "newest": newest_date, "category": "TARGET,NOTE", "resolve": "false"}
+    params = {"oldest": oldest_date.strftime("%Y-%m-%dT00:00:00"), "newest": newest_date.strftime("%Y-%m-%dT00:00:00"), "category": "TARGET,NOTE", "resolve": "false"}
     response_get = requests.get(url_get, headers=API_headers, params=params, auth=HTTPBasicAuth(username, api_key))
     events = response_get.json() if response_get.status_code == 200 else []
 
-    weekly_loads = get_weekly_loads(athlete_id, username, api_key)
+    weekly_loads = get_weekly_loads(athlete_id, username, api_key, oldest_date, newest_date)
 
     description_added = {}
     for index, row in df.iterrows():
@@ -276,9 +278,9 @@ def main():
         else:
             description = race_focus_description
         if week == 52:
-            description = add_load_check_description(row, weekly_loads.get(51, {'ctlLoad': 0, 'atlLoad': 0}), description)
+            description = add_load_check_description(row, weekly_loads.get('51', {'ctlLoad': 0, 'atlLoad': 0}), description)
         else:
-            description = add_load_check_description(row, weekly_loads.get(week, {'ctlLoad': 0, 'atlLoad': 0}), description)
+            description = add_load_check_description(row, weekly_loads.get(f"{row['start_date_local'].isocalendar()[0]}-{week}", {'ctlLoad': 0, 'atlLoad': 0}), description)
 
         if week not in description_added:
             description_added[week] = False
