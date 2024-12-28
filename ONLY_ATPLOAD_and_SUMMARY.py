@@ -21,6 +21,10 @@ ATP_file_path = r'C:\TEMP\Intervals_API_Tools_Office365_v1.6_ATP2intervals.xlsm'
 
 parse_delay = .01
 do_at_rest = "**Stay in bed, on the beach and focus on friends, family and your Märklin trainset.**"
+note_FEEDBACK_name = "Weekly feedback of the trainingload last week"
+note_ATP_name = "Weekly training and focus summary of your ATP"
+
+
 
 user_data = read_user_data(ATP_file_path)
 api_key = user_data.get('API_KEY', "yourapikey")
@@ -310,8 +314,8 @@ def main():
     oldest_date = df['start_date_local'].min()
     newest_date = df['start_date_local'].max()
 
-    # Delete existing NOTE_EVENTS before processing new ones
-    delete_events(athlete_id, username, api_key, oldest_date.strftime("%Y-%m-%dT00:00:00"), newest_date.strftime("%Y-%m-%dT00:00:00"), "NOTE")
+    # Delete existing NOTE_EVENTS with the same note_ATP_name before processing new ones
+    delete_events(athlete_id, username, api_key, oldest_date.strftime("%Y-%m-%dT00:00:00"), newest_date.strftime("%Y-%m-%dT00:00:00"), "NOTE", note_ATP_name)
 
     url_get = f"{url_base}/eventsjson".format(athlete_id=athlete_id)
     params = {"oldest": oldest_date.strftime("%Y-%m-%dT00:00:00"), "newest": newest_date.strftime("%Y-%m-%dT00:00:00"), "category": "TARGET,NOTE", "resolve": "false"}
@@ -336,7 +340,6 @@ def main():
         else:
             description = race_focus_description
         
-
 
         if week not in description_added:
             description_added[week] = False
