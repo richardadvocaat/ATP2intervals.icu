@@ -21,7 +21,7 @@ ATP_file_path = r'C:\TEMP\Intervals_API_Tools_Office365_v1.6_ATP2intervals.xlsm'
 
 parse_delay = .01
 do_at_rest = "**Stay in bed, on the beach and focus on friends, family and your Märklin trainset.**"
-note_FEEDBACK_name = "Weekly training and focus summary"
+note_FEEDBACK_name_template = "Weekly update about your training in week {last_week}"
 note_ATP_name = "Weekly training and focus summary of your ATP"
 
 user_data = read_user_data(ATP_file_path)
@@ -59,8 +59,6 @@ athlete_name = get_athlete_name(athlete_id, username, api_key)
 print(f"Athlete First Name: {athlete_name}")
 
 logging.info(f"Using athlete first name: {athlete_name} for further processing.")
-
-
 
 def distance_conversion_factor(unit_preference):
     conversion_factors = {
@@ -146,7 +144,7 @@ def delete_events(athlete_id, username, api_key, oldest_date, newest_date, categ
             logging.error(f"Error deleting {category.lower()} event ID={event_id}: {response_del.status_code}")
         time_module.sleep(parse_delay)
 
-def create_update_or_delete_note_event(start_date, description, color, events, athlete_id, username, api_key):
+def create_update_or_delete_note_event(start_date, description, color, events, athlete_id, username, api_key, last_week):
     end_date = start_date
 
     description = populate_description(description)
@@ -155,7 +153,7 @@ def create_update_or_delete_note_event(start_date, description, color, events, a
         "category": "NOTE",
         "start_date_local": start_date,
         "end_date_local": end_date,
-        "name": note_FEEDBACK_name,
+        "name": note_FEEDBACK_name_template.format(last_week=last_week),
         "description": description,
         "not_on_fitness_chart": "true",
         "show_as_note": "false",
@@ -257,7 +255,7 @@ def main():
     newest_date = df['start_date_local'].max()
 
     # Delete existing NOTE_EVENTS with the same note_FEEDBACK_name before processing new ones
-    delete_events(athlete_id, username, api_key, oldest_date.strftime("%Y-%m-%dT00:00:00"), newest_date.strftime("%Y-%m-%dT00:00:00"), "NOTE", note_FEEDBACK_name)
+    delete_events(athlete_id, username, api_key, oldest_date.strftime("%Y-%m-%dT00:00:00"), newest_date.strftime("%Y-%m-%dT00:00:00"), "NOTE", note_FEEDBACK_name_template.format(last_week="*"))
 
     url_get = f"{url_base}/eventsjson".format(athlete_id=athlete_id)
     params = {"oldest": oldest_date.strftime("%Y-%m-%dT00:00:00"), "newest": newest_date.strftime("%Y-%m-%dT00:00:00"), "category": "TARGET,NOTE", "resolve": "false"}
@@ -285,7 +283,7 @@ def main():
             description_added[week] = False
 
         if description.strip() and not description_added[week]:
-            create_update_or_delete_note_event(start_date, description, note_FEEDBACK_color, events, athlete_id, username, api_key)
+            create_update_or_delete_note_event(start_date, description, note_FEEDBACK_color, events, athlete_id, username, api_key, previous_week)
             description_added[week] = True
         time_module.sleep(parse_delay)
         
