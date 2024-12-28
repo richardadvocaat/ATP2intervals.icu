@@ -130,14 +130,14 @@ def get_last_week_load(athlete_id, username, api_key, note_event_date):
     
     return last_week_load
 
-def delete_events(athlete_id, username, api_key, oldest_date, newest_date, category, name=None):
+def delete_events_with_prefix(athlete_id, username, api_key, oldest_date, newest_date, category, name_prefix):
     url_get = f"{url_base}/eventsjson".format(athlete_id=athlete_id)
     params = {"oldest": oldest_date, "newest": newest_date, "category": category}
     response_get = requests.get(url_get, headers=API_headers, params=params, auth=HTTPBasicAuth(username, api_key))
     events = response_get.json() if response_get.status_code == 200 else []
 
     for event in events:
-        if name and event['name'] != name:
+        if name_prefix and not event['name'].startswith(name_prefix):
             continue
         event_id = event['id']
         url_del = f"{url_base}/events/{event_id}".format(athlete_id=athlete_id)
@@ -257,7 +257,7 @@ def populate_description(description, first_a_event):
 def add_period_description(row, description):
     period = row['period'] if not pd.isna(row['period']) else ""
     if period:
-        description += f"- You are in the **{period}** period of your trainingplan.\n\n"
+        description += f"- You are in the **{period}** period of your training plan.\n\n"
         if period == "Rest":
             description += f"- {do_at_rest}\n\n"
     return description
@@ -327,8 +327,8 @@ def main():
     # Get the first A-event
     first_a_event = get_first_a_event(df)
 
-    # Delete existing NOTE_EVENTS with the same note_ATP_name before processing new ones
-    delete_events(athlete_id, username, api_key, oldest_date.strftime("%Y-%m-%dT00:00:00"), newest_date.strftime("%Y-%m-%dT00:00:00"), "NOTE", note_ATP_name)
+    # Delete existing NOTE_EVENTS with the same note_ATP_name prefix before processing new ones
+    delete_events_with_prefix(athlete_id, username, api_key, oldest_date.strftime("%Y-%m-%dT00:00:00"), newest_date.strftime("%Y-%m-%dT00:00:00"), "NOTE", "Weekly training and focus summary of your ATP")
 
     url_get = f"{url_base}/eventsjson".format(athlete_id=athlete_id)
     params = {"oldest": oldest_date.strftime("%Y-%m-%dT00:00:00"), "newest": newest_date.strftime("%Y-%m-%dT00:00:00"), "category": "TARGET,NOTE", "resolve": "false"}
