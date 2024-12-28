@@ -249,16 +249,15 @@ def populate_description(description, first_a_event):
         description = "Nothing to mention this week."
     
     if first_a_event:
-        description = f"- This (part) of the plan aims for **{first_a_event}**\n\n. " + description
+        description = f"- This (part) of the plan aims for **{first_a_event}**.\n\n " + description
 
     description = f"Hi **{athlete_name}**, here is your weekly ATP summary:\n\n" + description
     return description
 
-
 def add_period_description(row, description):
     period = row['period'] if not pd.isna(row['period']) else ""
     if period:
-        description = f"- You are in the **{period}** period of your trainingplan.\n\n "
+        description += f"- You are in the **{period}** period of your trainingplan.\n\n"
         if period == "Rest":
             description += f"- {do_at_rest}\n\n"
     return description
