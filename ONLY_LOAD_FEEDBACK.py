@@ -58,7 +58,7 @@ print(f"Athlete First Name: {athlete_name}")
 
 logging.info(f"Using athlete first name: {athlete_name} for further processing.")
 
-note_name = f"Your weekly training and focus summary"
+note_FEEDBACK_name = f"Your weekly training and focus summary"
 
 def distance_conversion_factor(unit_preference):
     conversion_factors = {
@@ -153,7 +153,7 @@ def create_update_or_delete_note_event(start_date, description, color, events, a
         "category": "NOTE",
         "start_date_local": start_date,
         "end_date_local": end_date,
-        "name": note_name,
+        "name": note_FEEDBACK_name,
         "description": description,
         "not_on_fitness_chart": "true",
         "show_as_note": "false",
