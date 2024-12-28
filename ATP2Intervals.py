@@ -299,40 +299,47 @@ def add_next_race_description(index, df, week, description):
             description += f"- Upcoming race: **{next_race_name}** (a **{next_race_cat}**-event) within **{weeks_to_go}** weeks on {next_race_day} {next_race_dayofmonth} {next_race_month}.\n\n "    
     return description
 
-def calculate_total_load(row):
-    return sum(row[col] for col in row.index if col.endswith('_load'))
-
-def add_load_check_description(row, previous_week_loads, description):
-    sheet_load = calculate_total_load(row)
-    ctl_load = previous_week_loads['ctlLoad']
-    atl_load = previous_week_loads['atlLoad']
-    
-    delta_ctl = ctl_load - sheet_load
-    delta_atl = atl_load - sheet_load
-
-    feedback = "Good."
-    if sheet_load == 0 and ctl_load == 0 and atl_load == 0:
-        feedback = '--.'
-    elif ctl_load == 0 and atl_load == 0:
-        feedback = "Nothing done?"
-    elif sheet_load == 0:
-        feedback = "There was nothing to do...?"
-    elif delta_ctl == 0 or delta_atl == 0:
-        feedback = "Perfect!"
-    elif delta_ctl > 0.2 * sheet_load or delta_atl > 0.2 * sheet_load:
-        feedback = "Too much."
-    elif delta_ctl < -0.2 * sheet_load or delta_atl < -0.2 * sheet_load:
-        feedback = "Too little."
-
-    description += f"\n\nYour total ctlLoad for the last week was: {ctl_load}. Your total atlLoad for the last week was: {atl_load}. Compared to the planned load: {sheet_load}. Feedback: {feedback}"
-    
-    return description
-
 def get_previous_week(year, week):
     if week == 1:
         return year - 1, 52
     else:
         return year, week - 1
+    
+def calculate_total_load(row):
+    return sum(row[col] for col in row.index if col.endswith('_load'))
+
+
+def get_previous_week_sheet_load(df, previous_year, previous_week):
+    previous_year_week = f"{previous_year}-{previous_week}"
+    previous_week_data = df[(df['year_week'] == previous_year_week)]
+    if not previous_week_data.empty:
+        return calculate_total_load(previous_week_data.iloc[0])
+    return 0
+
+def add_load_check_description(row, previous_week_loads, previous_week_sheet_load, description):
+    ctl_load = previous_week_loads['ctlLoad']
+    atl_load = previous_week_loads['atlLoad']
+    
+    delta_ctl = ctl_load - previous_week_sheet_load
+    delta_atl = atl_load - previous_week_sheet_load
+
+    feedback = "Good."
+    if previous_week_sheet_load == 0 and ctl_load == 0 and atl_load == 0:
+        feedback = '--.'
+    elif ctl_load == 0 and atl_load == 0:
+        feedback = "Nothing done?"
+    elif previous_week_sheet_load == 0:
+        feedback = "There was nothing to do...?"
+    elif delta_ctl == 0 or delta_atl == 0:
+        feedback = "Perfect!"
+    elif delta_ctl > 0.2 * previous_week_sheet_load or delta_atl > 0.2 * previous_week_sheet_load:
+        feedback = "Too much."
+    elif delta_ctl < -0.2 * previous_week_sheet_load or delta_atl < -0.2 * previous_week_sheet_load:
+        feedback = "Too little."
+
+    description += f"\n\nYour total ctlLoad for the last week was: {ctl_load}. Your total atlLoad for the last week was: {atl_load}. Compared to the planned load: {previous_week_sheet_load}. Feedback: {feedback}"
+    
+    return description
 
 def main():
     df = pd.read_excel(ATP_file_path, sheet_name=ATP_sheet_name)
@@ -340,6 +347,9 @@ def main():
 
     oldest_date = df['start_date_local'].min()
     newest_date = df['start_date_local'].max()
+
+    # Delete existing NOTE_EVENTS before processing new ones
+    delete_events(athlete_id, username, api_key, oldest_date.strftime("%Y-%m-%dT00:00:00"), newest_date.strftime("%Y-%m-%dT00:00:00"), "NOTE")
 
     url_get = f"{url_base}/eventsjson".format(athlete_id=athlete_id)
     params = {"oldest": oldest_date.strftime("%Y-%m-%dT00:00:00"), "newest": newest_date.strftime("%Y-%m-%dT00:00:00"), "category": "TARGET,NOTE", "resolve": "false"}
@@ -368,7 +378,7 @@ def main():
             description = race_focus_description
         
         previous_week_loads = weekly_loads.get(previous_year_week, {'ctlLoad': 0, 'atlLoad': 0})
-        description = add_load_check_description(row, previous_week_loads, description)
+        description = add_load_check_description(row, previous_week_loads, previous_week_sheet_load, description)
 
         if week not in description_added:
             description_added[week] = False
