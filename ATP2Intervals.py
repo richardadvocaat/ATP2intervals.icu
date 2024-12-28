@@ -333,17 +333,20 @@ def add_load_check_description(row, previous_week_loads, previous_week_sheet_loa
     elif delta_ctl == 0 or delta_atl == 0:
         feedback = "Perfect!"
     elif delta_ctl > 0.2 * previous_week_sheet_load or delta_atl > 0.2 * previous_week_sheet_load:
-        feedback = "Too much."
+        feedback = "You did too."
     elif delta_ctl < -0.2 * previous_week_sheet_load or delta_atl < -0.2 * previous_week_sheet_load:
-        feedback = "Too little."
+        feedback = "You did too little."
 
-    description += f"\n\nYour total ctlLoad for the last week was: {ctl_load}. Your total atlLoad for the last week was: {atl_load}. Compared to the planned load: {previous_week_sheet_load}. Feedback: {feedback}"
+    description += f"\n\nYour total trainingLoad for the last week was: **{ctl_load}**. Compared to the planned load: **{previous_week_sheet_load}**: Feedback: **{feedback}**"
     
     return description
 
 def main():
     df = pd.read_excel(ATP_file_path, sheet_name=ATP_sheet_name)
     df.fillna(0, inplace=True)
+
+    # Create 'year_week' column
+    df['year_week'] = df['start_date_local'].apply(lambda x: f"{x.isocalendar()[0]}-{x.isocalendar()[1]}")
 
     oldest_date = df['start_date_local'].min()
     newest_date = df['start_date_local'].max()
@@ -378,6 +381,7 @@ def main():
             description = race_focus_description
         
         previous_week_loads = weekly_loads.get(previous_year_week, {'ctlLoad': 0, 'atlLoad': 0})
+        previous_week_sheet_load = get_previous_week_sheet_load(df, previous_year, previous_week)  # Define it here
         description = add_load_check_description(row, previous_week_loads, previous_week_sheet_load, description)
 
         if week not in description_added:
