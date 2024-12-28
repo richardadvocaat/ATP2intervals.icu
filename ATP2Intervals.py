@@ -224,10 +224,13 @@ def add_next_race_description(index, df, week, description):
             description += f"- Upcoming race: **{next_race_name}** (a **{next_race_cat}**-event) within **{weeks_to_go}** weeks on {next_race_day} {next_race_dayofmonth} {next_race_month}.\n\n "    
     return description
 
-def add_load_check_description(row, weekly_loads, description):
-    sheet_load = row['Total_Load'] if 'Total_Load' in row else 0
-    ctl_load = weekly_loads['ctlLoad']
-    atl_load = weekly_loads['atlLoad']
+def calculate_total_load(row):
+    return sum(row[col] for col in row.index if col.endswith('_load'))
+
+def add_load_check_description(row, previous_week_loads, description):
+    sheet_load = calculate_total_load(row)
+    ctl_load = previous_week_loads['ctlLoad']
+    atl_load = previous_week_loads['atlLoad']
     
     delta_ctl = ctl_load - sheet_load
     delta_atl = atl_load - sheet_load
@@ -250,6 +253,12 @@ def add_load_check_description(row, weekly_loads, description):
     
     return description
 
+def get_previous_week(year, week):
+    if week == 1:
+        return year - 1, 52
+    else:
+        return year, week - 1
+
 def main():
     df = pd.read_excel(ATP_file_path, sheet_name=ATP_sheet_name)
     df.fillna(0, inplace=True)
@@ -268,6 +277,11 @@ def main():
     for index, row in df.iterrows():
         start_date = row['start_date_local'].strftime("%Y-%m-%dT00:00:00")
         week = row['start_date_local'].isocalendar()[1]
+        year = row['start_date_local'].isocalendar()[0]
+        previous_year, previous_week = get_previous_week(year, week)
+        previous_year_week = f"{previous_year}-{previous_week}"
+        year_week = f"{year}-{week}"
+        
         description = ""
         description = add_period_description(row, description)
         description = add_test_description(row, description)
@@ -277,10 +291,9 @@ def main():
             description = add_next_race_description(index, df, week, description)
         else:
             description = race_focus_description
-        if week == 52:
-            description = add_load_check_description(row, weekly_loads.get('51', {'ctlLoad': 0, 'atlLoad': 0}), description)
-        else:
-            description = add_load_check_description(row, weekly_loads.get(f"{row['start_date_local'].isocalendar()[0]}-{week}", {'ctlLoad': 0, 'atlLoad': 0}), description)
+        
+        previous_week_loads = weekly_loads.get(previous_year_week, {'ctlLoad': 0, 'atlLoad': 0})
+        description = add_load_check_description(row, previous_week_loads, description)
 
         if week not in description_added:
             description_added[week] = False
