@@ -6,10 +6,10 @@ To Do: make path to the ATP file dependend of the athlete's name. Store paramete
 The idea is that it must be an easy job to populate intervals.icu with the coach's made ATP.
 
 ## What's in it
-The first Python script ([ATP2Intervals.py_ATP_populate.py](https://github.com/richardadvocaat/ATP2intervals.icu/blob/richardadvocaat-patch-1-LOAD-FEADBACK/ATP2Intervals.py_ATP_populate.py)) automates the process of sending an annual training plan (ATP) with weekly (TSS, Time and/or distance)-loads for multiple sports. And it makes notes with multiple comments for your athlete to intervals.icu. It reads data from the ATP Excel file made by [Gerald](https://forum.intervals.icu/u/gerald/summary) These files can be found on [Google Drive](https://drive.google.com/drive/folders/1WhIOf2XkGiZBEN_7tX2PSShmF-QXBnBF).
+#?The first Python script ([ATP2Intervals.py_ATP_populate.py](https://github.com/richardadvocaat/ATP2intervals.icu/blob/richardadvocaat-patch-1-LOAD-FEADBACK/ATP2Intervals.py_ATP_populate.py)) automates the process of sending an annual training plan (ATP) with weekly (TSS, Time and/or distance)-loads for multiple sports. And it makes notes with multiple comments for your athlete to intervals.icu. It reads data from the ATP Excel file made by [Gerald](https://forum.intervals.icu/u/gerald/summary) These files can be found on [Google Drive](https://drive.google.com/drive/folders/1WhIOf2XkGiZBEN_7tX2PSShmF-QXBnBF).
 Find more information about ATP on the [intervals.icu forum](https://forum.intervals.icu/t/apps-in-excel-a-guide-to-getting-started/20844).
 
-The second script ([ATP2Intervals.py_LOAD_FEEDBACK.py](https://github.com/richardadvocaat/ATP2intervals.icu/blob/richardadvocaat-patch-1-LOAD-FEADBACK/ATP2Intervals.py_LOAD_FEEDBACK.py) checks if the athlete was compliant to the plan based on the total load of the prior week compared with the load of the ATL. It gives some basic feedback.
+# The second script ([ATP2Intervals.py_LOAD_FEEDBACK.py](https://github.com/richardadvocaat/ATP2intervals.icu/blob/richardadvocaat-patch-1-LOAD-FEADBACK/ATP2Intervals.py_LOAD_FEEDBACK.py) checks if the athlete was compliant to the plan based on the total load of the prior week compared with the load of the ATL. It gives some basic feedback.
 
 
 ## Features
