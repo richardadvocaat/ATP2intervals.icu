@@ -1,6 +1,7 @@
 # ATP2intervals.icu
 
 ISSUE: DATE of UPCOMING RACE DOES NOT MATCH IN THE DECRIPTION
+
 To Do: make path to the ATP file dependend of the athlete's name. Store parameters for the trainer in a separate document where also the athletes are stored.(or get this list from intervals.
 at the end it must be fair easy job to populate intervals.icu with the coach's made ATP quite easily.
 
