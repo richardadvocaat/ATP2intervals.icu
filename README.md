@@ -19,9 +19,6 @@ Find more information about ATP on the [intervals.icu forum](https://forum.inter
 - **Delete Events**: Deletes corresponding events in intervals.icu if the load target is zero.
 - **Efficient Data Handling**: Retrieves all relevant events in a single API call to improve performance and reduce server load.
 - **Unit Conversion**: Allows users to specify their unit preference (metric or imperial) for Bike and Run distances, while Swim distances remain in meters.
-- **Custom Descriptions**: Adds custom descriptions based on the 'period' and 'focus' columns from the Excel file.
-  - If 'period' is "Rest", the description will include something like "Stay in bed or on the beach!". (but it is a variable)
-  - If 'focus' has a value, the description will include "Focus this week on {focus}".
 - **Test Column**: Adds comments for tests specified in the 'test' column.
 - **Focus Columns**: Adds focus based on specified focus columns like Aerobic Endurance, Muscular Force, etc.
 - **Race Categories**: Adds focus for A, B, and C category races with custom descriptions.
