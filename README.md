@@ -1,4 +1,4 @@
-v# ATP2intervals.icu
+# ATP2intervals.icu
 
 ISSUE: DATE of UPCOMING RACE DOES NOT MATCH IN THE DECRIPTION
 
