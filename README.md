@@ -1,8 +1,8 @@
-# ATP2intervals.icu
+v# ATP2intervals.icu
 
 ISSUE: DATE of UPCOMING RACE DOES NOT MATCH IN THE DECRIPTION
 
-To Do: make path to the ATP file dependend of the athlete's name. Store parameters for the coach in a separate document where also the athletes are stored.(or get this list from intervals.
+To Do: make path to the ATP file dependend of the athlete's name. Store parameters for the coach in a separate document where also the coached athlete names are stored.(or get this list from intervals.
 at the end it must be fair easy job to populate intervals.icu with the coach's made ATP quite easily.
 
 The first Python script ([ATP2Intervals.py_ATP_populate.py](https://github.com/richardadvocaat/ATP2intervals.icu/blob/richardadvocaat-patch-1-LOAD-FEADBACK/ATP2Intervals.py_ATP_populate.py)) automates the process of sending an annual training plan (ATP) with weekly (TSS, Time and/or distance)-loads for multiple sports. And it makes notes with multiple comments for your athlete to intervals.icu. It reads data from the ATP Excel file made by [Gerald](https://forum.intervals.icu/u/gerald/summary) These files can be found on [Google Drive](https://drive.google.com/drive/folders/1WhIOf2XkGiZBEN_7tX2PSShmF-QXBnBF).
