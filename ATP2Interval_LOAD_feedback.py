@@ -126,14 +126,14 @@ def get_last_week_load(athlete_id, username, api_key, note_event_date):
     
     return last_week_load
 
-def delete_events(athlete_id, username, api_key, oldest_date, newest_date, category, name=None):
+def delete_events(athlete_id, username, api_key, oldest_date, newest_date, category, name_prefix=None):
     url_get = f"{url_base}/eventsjson".format(athlete_id=athlete_id)
     params = {"oldest": oldest_date, "newest": newest_date, "category": category}
     response_get = requests.get(url_get, headers=API_headers, params=params, auth=HTTPBasicAuth(username, api_key))
     events = response_get.json() if response_get.status_code == 200 else []
 
     for event in events:
-        if name and event['name'] != name:
+        if name_prefix and not event['name'].startswith(name_prefix):
             continue
         event_id = event['id']
         url_del = f"{url_base}/events/{event_id}".format(athlete_id=athlete_id)
@@ -143,6 +143,7 @@ def delete_events(athlete_id, username, api_key, oldest_date, newest_date, categ
         else:
             logging.error(f"Error deleting {category.lower()} event ID={event_id}: {response_del.status_code}")
         time_module.sleep(parse_delay)
+
 
 def create_update_or_delete_note_event(start_date, description, color, events, athlete_id, username, api_key, last_week):
     end_date = start_date
@@ -254,8 +255,8 @@ def main():
     oldest_date = df['start_date_local'].min()
     newest_date = df['start_date_local'].max()
 
-    # Delete existing NOTE_EVENTS with the same note_FEEDBACK_name before processing new ones
-    delete_events(athlete_id, username, api_key, oldest_date.strftime("%Y-%m-%dT00:00:00"), newest_date.strftime("%Y-%m-%dT00:00:00"), "NOTE", note_FEEDBACK_name_template.format(last_week="*"))
+    # Delete existing NOTE_EVENTS with the same note_FEEDBACK_name prefix before processing new ones
+    delete_events(athlete_id, username, api_key, oldest_date.strftime("%Y-%m-%dT00:00:00"), newest_date.strftime("%Y-%m-%dT00:00:00"), "NOTE", note_FEEDBACK_name_template.split("{")[0])
 
     url_get = f"{url_base}/eventsjson".format(athlete_id=athlete_id)
     params = {"oldest": oldest_date.strftime("%Y-%m-%dT00:00:00"), "newest": newest_date.strftime("%Y-%m-%dT00:00:00"), "category": "TARGET,NOTE", "resolve": "false"}
@@ -277,9 +278,9 @@ def main():
         previous_year, previous_week = get_previous_week(year, week)
         previous_year_week = f"{previous_year}-{previous_week}"
         year_week = f"{year}-{week}"
-                 
+                  
         description = ""
-                 
+                  
         previous_week_loads = weekly_loads.get(previous_year_week, {'ctlLoad': 0, 'atlLoad': 0})
         previous_week_sheet_load = get_previous_week_sheet_load(df, previous_year, previous_week)  # Define it here
         description = add_load_check_description(row, previous_week_loads, previous_week_sheet_load, description)
@@ -291,6 +292,6 @@ def main():
             create_update_or_delete_note_event(start_date_str, description, note_FEEDBACK_color, events, athlete_id, username, api_key, previous_week)
             description_added[week] = True
         time_module.sleep(parse_delay)
-        
+
 if __name__ == "__main__":
     main()
