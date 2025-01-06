@@ -35,8 +35,7 @@ API_headers = {"Content-Type": "application/json"}
 def distance_conversion_factor(unit_preference):
     conversion_factors = {
         "metric": 1000,
-        "imperial": 1609.344,
-        "Rijnlands": 3.186
+        "imperial": 1609.344      
     }
     return conversion_factors.get(unit_preference, 1000)
 
