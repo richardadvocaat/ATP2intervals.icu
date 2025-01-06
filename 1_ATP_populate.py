@@ -15,7 +15,7 @@ def read_user_data(ATP_file_path, sheet_name="User_Data"):
     user_data = df.set_index('Key').to_dict()['Value']
     return user_data
 
-ATP_sheet_name = "ATP_data"
+ATP_sheet_name = "ATP_Data"
 ATP_file_path = r'C:\TEMP\Intervals_API_Tools_Office365_v1.6_ATP2intervals.xlsm'
 parse_delay = .01
 
