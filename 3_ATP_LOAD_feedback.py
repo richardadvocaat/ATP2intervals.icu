@@ -265,6 +265,7 @@ def main():
 
     description_added = {}
     today = datetime.now().date()
+    first_note = True
     for index, row in df.iterrows():
         start_date = row['start_date_local'].date()
         if start_date > today:
@@ -281,7 +282,12 @@ def main():
                   
         previous_week_loads = weekly_loads.get(previous_year_week, {'ctlLoad': 0, 'atlLoad': 0})
         previous_week_sheet_load = get_previous_week_sheet_load(df, previous_year, previous_week)  # Define it here
-        description = add_load_check_description(row, previous_week_loads, previous_week_sheet_load, description)
+
+        if first_note:
+            description = "No feedback for the startweek"
+            first_note = False
+        else:
+            description = add_load_check_description(row, previous_week_loads, previous_week_sheet_load, description)
 
         if week not in description_added:
             description_added[week] = False
