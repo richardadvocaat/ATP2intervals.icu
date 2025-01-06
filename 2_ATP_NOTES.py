@@ -238,7 +238,7 @@ def add_race_focus_description(row, description):
     race_cat = str(row.get('cat', '')).upper()
     race_name = row.get('race', '').strip()
     if race_cat == 'A' and race_name:
-        description += f"- Use the **{race_name}** as an {race_cat}-event to primarily focus this week on this race.\n\n"
+        description += f"- **{race_name}** is your main-goal! This is your **{race_cat}-event**, so primarily focus on this race.\n\n"
     elif race_cat == 'B' and race_name:
         description += f"- Use the **{race_name}** to learn and improve skills.\n\n"
     elif race_cat == 'C' and race_name:
