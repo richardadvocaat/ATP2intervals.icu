@@ -223,7 +223,7 @@ def add_test_description(row, description):
 
 def add_focus_description(row, description):
     focus_columns = [
-        'Aerobic Endurance', 'Muscular force', 'Speed Skills',
+        'Weight Lifting', 'Aerobic Endurance', 'Muscular force', 'Speed Skills',
         'Muscular Endurance', 'Anaerobic Endurance', 'Sprint Power'
     ]
     additional_focus = [col for col in focus_columns if str(row.get(col, '')).lower() == 'x']
