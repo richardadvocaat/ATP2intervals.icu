@@ -20,8 +20,6 @@ ATP_sheet_name = "ATP_data"
 ATP_file_path = r'C:\TEMP\Intervals_API_Tools_Office365_v1.6_ATP2intervals.xlsm'
 
 parse_delay = .01
-do_at_rest = "**Stay in bed, on the beach and focus on friends, family and your Märklin trainset.**"
-note_FEEDBACK_name = "Weekly feedback of the trainingload last week"
 note_ATP_name = "Weekly training and focus summary of your ATP"
 
 user_data = read_user_data(ATP_file_path)
@@ -31,6 +29,7 @@ athlete_id = user_data.get('ATHLETE_ID', "athleteid")
 unit_preference = user_data.get('DISTANCE_SYSTEM', "metric")
 note_ATP_color = user_data.get('NOTE_ATP_COLOR', "red")
 note_FEEDBACK_color = user_data.get('NOTE_FEEDBACK_COLOR', "blue")
+do_at_rest = user_data.get('Do_At_Rest', "Do nothing!")
 
 url_base = "https://intervals.icu/api/v1/athlete/{athlete_id}"
 url_profile = f"https://intervals.icu/api/v1/athlete/{athlete_id}/profile"
@@ -139,23 +138,23 @@ def delete_events_with_prefix(athlete_id, username, api_key, oldest_date, newest
             logging.error(f"Error deleting {category.lower()} event ID={event_id}: {response_del.status_code}")
         time_module.sleep(parse_delay)
 
-# def delete_events(athlete_id, username, api_key, oldest_date, newest_date, category, name=None):
-#     url_get = f"{url_base}/eventsjson".format(athlete_id=athlete_id)
-#     params = {"oldest": oldest_date, "newest": newest_date, "category": category}
-#     response_get = requests.get(url_get, headers=API_headers, params=params, auth=HTTPBasicAuth(username, api_key))
-#     events = response_get.json() if response_get.status_code == 200 else []
+def delete_events(athlete_id, username, api_key, oldest_date, newest_date, category, name=None):
+    url_get = f"{url_base}/eventsjson".format(athlete_id=athlete_id)
+    params = {"oldest": oldest_date, "newest": newest_date, "category": category}
+    response_get = requests.get(url_get, headers=API_headers, params=params, auth=HTTPBasicAuth(username, api_key))
+    events = response_get.json() if response_get.status_code == 200 else []
 
-#     for event in events:
-#         if name and event['name'] != name:
-#             continue
-#         event_id = event['id']
-#         url_del = f"{url_base}/events/{event_id}".format(athlete_id=athlete_id)
-#         response_del = requests.delete(url_del, headers=API_headers, auth=HTTPBasicAuth(username, api_key))
-#         if response_del.status_code == 200:
-#             logging.info(f"Deleted {category.lower()} event ID={event_id}")
-#         else:
-#             logging.error(f"Error deleting {category.lower()} event ID={event_id}: {response_del.status_code}")
-#         time_module.sleep(parse_delay)
+    for event in events:
+        if name and event['name'] != name:
+            continue
+        event_id = event['id']
+        url_del = f"{url_base}/events/{event_id}".format(athlete_id=athlete_id)
+        response_del = requests.delete(url_del, headers=API_headers, auth=HTTPBasicAuth(username, api_key))
+        if response_del.status_code == 200:
+            logging.info(f"Deleted {category.lower()} event ID={event_id}")
+        else:
+            logging.error(f"Error deleting {category.lower()} event ID={event_id}: {response_del.status_code}")
+        time_module.sleep(parse_delay)
 
 def create_update_or_delete_note_event(start_date, description, color, events, athlete_id, username, api_key, current_week, first_a_event):
     end_date = start_date
@@ -213,7 +212,7 @@ def add_period_description(row, description):
     if period:
         description += f"- You are in the **{period}** period of your training plan.\n\n"
         if period == "Rest":
-            description += f"- {do_at_rest}\n\n"
+            description += f"**{do_at_rest}**\n\n"
     return description
 
 def add_test_description(row, description):
