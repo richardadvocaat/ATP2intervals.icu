@@ -1,16 +1,15 @@
 # ATP2intervals.icu
 
-ISSUE: DATE of UPCOMING RACE DOES NOT MATCH IN THE DECRIPTION
-
-To Do: make path to the ATP file dependend of the athlete's name. Store parameters for the coach in a separate document where also the coached athlete names are stored.(or get this list from intervals.icu.
+To Do: make path to the ATP file dependend of the athlete's name. Store parameters for the coach in a separate document where also the coached athlete names are stored. (or get this list from intervals.icu.)
 The idea is that it must be an easy job to populate intervals.icu with the coach's made ATP.
 
 ## What's in it
-**The first Python script ([ATP2Intervals.py_ATP_populate.py](https://github.com/richardadvocaat/ATP2intervals.icu/blob/richardadvocaat-patch-1-LOAD-FEADBACK/ATP2Intervals.py_ATP_populate.py))** automates the process of sending an annual training plan (ATP) with weekly (TSS, Time and/or distance)-loads for multiple sports. And it makes notes with multiple comments for your athlete to intervals.icu. It reads data from the ATP Excel file made by [Gerald](https://forum.intervals.icu/u/gerald/summary) These files can be found on [Google Drive](https://drive.google.com/drive/folders/1WhIOf2XkGiZBEN_7tX2PSShmF-QXBnBF).
+**The first Python script ([1_ATP_populate.py](https://github.com/richardadvocaat/ATP2intervals.icu/blob/main/1_ATP_populate.py))** automates the process of sending an annual training plan (ATP) with weekly (TSS, Time and/or distance)-loads for multiple sports. It reads data from the ATP Excel file made by [Gerald](https://forum.intervals.icu/u/gerald/summary) These files can be found on [Google Drive](https://drive.google.com/drive/folders/1WhIOf2XkGiZBEN_7tX2PSShmF-QXBnBF).
 Find more information about ATP on the [intervals.icu forum](https://forum.intervals.icu/t/apps-in-excel-a-guide-to-getting-started/20844).
 
-**The second script ([ATP2Intervals.py_LOAD_FEEDBACK.py](https://github.com/richardadvocaat/ATP2intervals.icu/blob/richardadvocaat-patch-1-LOAD-FEADBACK/ATP2Intervals.py_LOAD_FEEDBACK.py))** checks if the athlete was compliant to the plan based on the total load of the prior week compared with the load of the ATL. It gives some basic feedback.
+**The second script ([2_ATP_NOTES.py](https://github.com/richardadvocaat/ATP2intervals.icu/blob/main/3_ATP_LOAD_feedback.py))** makes notes with multiple comments for your athlete to intervals.icu. It reads data like focus on "Most Important Workouts", tests and coming events from the ATP Excel file made by [Gerald](https://forum.intervals.icu/u/gerald/summary) 
 
+**The third script ([3_ATP_LOAD_feedback.py]())** checks if the athlete was compliant to the plan based on the total load of the prior week compared with the load of the ATL. It gives some basic feedback based on the difference in load.
 
 ## Features
 
@@ -32,7 +31,8 @@ Find more information about ATP on the [intervals.icu forum](https://forum.inter
 ## Usage
 
 1. **Setup**: Ensure you have the required Python libraries installed (`logging`, `os`, `pandas`, `requests`).
-2. **Configuration**: Update the user variables at the top of the script with your Excel file path, sheet name, athlete ID, API key, and preferred unit system (metric or imperial).
+2. **Configuration**: Update the user variables at the top of the script with your Excel file path, sheet name.
 3. **Excel Sheets**: Place the `Intervals_API_Tools_Office365_v1._ATP2intervals.xlsm` in `C:\TEMP`. (This is hardcoded now, but based on the name, there is a possibility to differentiate this)
-4. **Run**: Execute the script to sync your training plan with intervals.icu.
+4. **User_Data**: In the tab User_Data you can put the athlete ID, API key, preferred unitsystem (metric or imperial) and some basic preferences like the color of the note.
+5. **Run**: Execute the scripts in the right order to sync your training plan with intervals.icu.
 
