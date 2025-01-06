@@ -6,6 +6,7 @@ import time as time_module
 from datetime import datetime, timedelta
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(level)s - %(message)s')
+#logging.basicConfig(level=logging.DEBUG, format='%(asctime)s - %(levelname)s - %(message)s')
 
 def format_activity_name(activity):
     return ''.join(word.capitalize() for word in activity.split('_'))
@@ -35,7 +36,8 @@ API_headers = {"Content-Type": "application/json"}
 def distance_conversion_factor(unit_preference):
     conversion_factors = {
         "metric": 1000,
-        "imperial": 1609.344      
+        "imperial": 1609.344,
+        "Rijnlands": 3.186
     }
     return conversion_factors.get(unit_preference, 1000)
 
@@ -152,4 +154,4 @@ def main():
             time_module.sleep(parse_delay)
 
 if __name__ == "__main__":
-    main()  
+    main()
