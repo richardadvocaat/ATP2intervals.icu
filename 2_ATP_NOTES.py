@@ -226,9 +226,12 @@ def add_focus_description(row, description):
         'Weight Lifting', 'Aerobic Endurance', 'Muscular force', 'Speed Skills',
         'Muscular Endurance', 'Anaerobic Endurance', 'Sprint Power'
     ]
-    additional_focus = [col for col in focus_columns if str(row.get(col, '')).lower() == 'x']
+    # Collect focus items with their respective priorities
+    additional_focus = [(col, int(row.get(col, 0))) for col in focus_columns if int(row.get(col, 0)) > 0]
+    # Sort the focus items based on the priority numbers
+    additional_focus.sort(key=lambda x: x[1])
     if additional_focus:
-        formatted_focus = format_focus_items_notes(additional_focus)
+        formatted_focus = format_focus_items_notes([col for col, priority in additional_focus])
         description += f"- Focus on **{formatted_focus}**.\n\n"
     elif description.strip():
         description += "- You don't have to focus on specific workouts this week.\n\n"
