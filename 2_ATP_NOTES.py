@@ -6,7 +6,7 @@ import time as time_module
 from datetime import datetime, timedelta
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(level)s - %(message)s')
-logging.basicConfig(level=logging.DEBUG, format='%(asctime)s - %(levelname)s - %(message)s')
+#logging.basicConfig(level=logging.DEBUG, format='%(asctime)s - %(levelname)s - %(message)s')
 
 def format_activity_name(activity):
     return ''.join(word.capitalize() for word in activity.split('_'))
