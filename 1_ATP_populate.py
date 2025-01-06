@@ -6,7 +6,6 @@ import time as time_module
 from datetime import datetime, timedelta
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(level)s - %(message)s')
-logging.basicConfig(level=logging.DEBUG, format='%(asctime)s - %(levelname)s - %(message)s')
 
 def format_activity_name(activity):
     return ''.join(word.capitalize() for word in activity.split('_'))
@@ -18,11 +17,7 @@ def read_user_data(ATP_file_path, sheet_name="User_Data"):
 
 ATP_sheet_name = "ATP_data"
 ATP_file_path = r'C:\TEMP\Intervals_API_Tools_Office365_v1.6_ATP2intervals.xlsm'
-
 parse_delay = .01
-do_at_rest = "**Stay in bed, on the beach and focus on friends, family and your Märklin trainset.**"
-note_FEEDBACK_name = "Weekly feedback of the trainingload last week"
-note_ATP_name = "Weekly training and focus summary of your ATP"
 
 user_data = read_user_data(ATP_file_path)
 api_key = user_data.get('API_KEY', "yourapikey")
@@ -30,7 +25,7 @@ username = user_data.get('USERNAME', "API_KEY")
 athlete_id = user_data.get('ATHLETE_ID', "athleteid")
 unit_preference = user_data.get('DISTANCE_SYSTEM', "metric")
 note_ATP_color = user_data.get('NOTE_ATP_COLOR', "red")
-note_FEEDBACK_color = user_data.get('NOTE_FEEDBACK_COLOR', "blue")
+do_at_rest = user_data.get('Do_At_Rest', "Do nothing!")
 
 url_base = "https://intervals.icu/api/v1/athlete/{athlete_id}"
 url_profile = f"https://intervals.icu/api/v1/athlete/{athlete_id}/profile"
@@ -44,6 +39,7 @@ def distance_conversion_factor(unit_preference):
         "Rijnlands": 3.186
     }
     return conversion_factors.get(unit_preference, 1000)
+
 def delete_events(athlete_id, username, api_key, oldest_date, newest_date, category, name=None):
     url_get = f"{url_base}/eventsjson".format(athlete_id=athlete_id)
     params = {"oldest": oldest_date, "newest": newest_date, "category": category}
@@ -127,13 +123,12 @@ def main():
     newest_date = df['start_date_local'].max().strftime("%Y-%m-%dT00:00:00")
 
     delete_events(athlete_id, username, api_key, oldest_date, newest_date, "TARGET")
-    
+
     url_get = f"{url_base}/eventsjson".format(athlete_id=athlete_id)
-    params = {"oldest": oldest_date, "newest": newest_date, "category": "TARGET", "resolve": "false"}
+    params = {"oldest": oldest_date, "newest": newest_date, "category": "TARGET,NOTE", "resolve": "false"}
     response_get = requests.get(url_get, headers=API_headers, params=params, auth=HTTPBasicAuth(username, api_key))
     events = response_get.json() if response_get.status_code == 200 else []
 
-   
     for index, row in df.iterrows():
         start_date = row['start_date_local'].strftime("%Y-%m-%dT00:00:00")
         for col in df.columns:
@@ -156,7 +151,6 @@ def main():
                     activity = format_activity_name(col.split('_load')[0])
                     create_update_or_delete_target_event(start_date, 0, 0, 0, activity, events, athlete_id, username, api_key)
             time_module.sleep(parse_delay)
-   
+
 if __name__ == "__main__":
-    main()
-    
+    main()  
