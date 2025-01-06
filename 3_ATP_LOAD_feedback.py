@@ -20,9 +20,7 @@ ATP_sheet_name = "ATP_data"
 ATP_file_path = r'C:\TEMP\Intervals_API_Tools_Office365_v1.6_ATP2intervals.xlsm'
 
 parse_delay = .01
-do_at_rest = "**Stay in bed, on the beach and focus on friends, family and your Märklin trainset.**"
 note_FEEDBACK_name_template = "Weekly update about your training in week {last_week}"
-note_ATP_name = "Weekly training and focus summary of your ATP"
 
 user_data = read_user_data(ATP_file_path)
 api_key = user_data.get('API_KEY', "yourapikey")
@@ -112,18 +110,18 @@ def get_weekly_loads(athlete_id, username, api_key, oldest_date, newest_date):
 def get_last_week_load(athlete_id, username, api_key, note_event_date):
     wellness_data = get_wellness_data(athlete_id, username, api_key)
     weekly_loads = calculate_weekly_loads(wellness_data)
-    
+
     note_date = datetime.strptime(note_event_date, "%Y-%m-%d")
     last_week_start = note_date - timedelta(days=note_date.weekday() + 7)
     last_week_end = last_week_start + timedelta(days=6)
-    
+
     last_week_load = {'ctlLoad': 0, 'atlLoad': 0}
     for entry in wellness_data:
         date = datetime.strptime(entry['id'], "%Y-%m-%d")
         if last_week_start <= date <= last_week_end:
             last_week_load['ctlLoad'] += entry.get('ctlLoad', 0)
             last_week_load['atlLoad'] += entry.get('atlLoad', 0)
-    
+
     return last_week_load
 
 def delete_events(athlete_id, username, api_key, oldest_date, newest_date, category, name_prefix=None):
