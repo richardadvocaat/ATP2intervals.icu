@@ -20,7 +20,7 @@ ATP_sheet_name = "ATP_data"
 ATP_file_path = r'C:\TEMP\Intervals_API_Tools_Office365_v1.6_ATP2intervals.xlsm'
 
 parse_delay = .01
-note_FEEDBACK_name_template = "Weekly update about your training in week {last_week}"
+note_FEEDBACK_name_template = "Weekly feedback about your training in week {last_week}"
 
 user_data = read_user_data(ATP_file_path)
 api_key = user_data.get('API_KEY', "yourapikey")
@@ -284,7 +284,7 @@ def main():
         previous_week_sheet_load = get_previous_week_sheet_load(df, previous_year, previous_week)  # Define it here
 
         if first_note:
-            description = "No feedback for the startweek"
+            description = "No feedback for the first week of the ATP"
             first_note = False
         else:
             description = add_load_check_description(row, previous_week_loads, previous_week_sheet_load, description)
