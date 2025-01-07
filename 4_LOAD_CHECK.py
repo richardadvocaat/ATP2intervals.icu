@@ -12,7 +12,10 @@ def read_user_data(ATP_file_path, sheet_name="User_Data"):
     return user_data
 
 ATP_sheet_name = "ATP_Data"
+ATP_loadcheck_sheet_name = "Weekly Type Loads"
 ATP_file_path = r'C:\TEMP\Intervals_API_Tools_Office365_v1.6_ATP2intervals.xlsm'
+#ATP_loadcheck_file_path = r'C:\TEMP\Intervals_API_Tools_Office365_v1.6_ATP2intervals.xlsm'
+ATP_loadcheck_file_path = r'C:\TEMP\ATP_LOAD.xlsx'
 
 user_data = read_user_data(ATP_file_path)
 api_key = user_data.get('API_KEY', "yourapikey")
@@ -22,30 +25,20 @@ athlete_id = user_data.get('ATHLETE_ID', "athleteid")
 url_base = "https://intervals.icu/api/v1/athlete/{athlete_id}"
 API_headers = {"Content-Type": "application/json"}
 
-def get_workouts(athlete_id, username, api_key, oldest_date, newest_date):
+def get_events(athlete_id, username, api_key, oldest_date, newest_date, category):
     url_get = f"{url_base}/eventsjson".format(athlete_id=athlete_id)
-    params = {"oldest": oldest_date.strftime("%Y-%m-%dT00:00:00"), "newest": newest_date.strftime("%Y-%m-%dT00:00:00"), "category": "WORKOUT"}
+    params = {"oldest": oldest_date.strftime("%Y-%m-%dT00:00:00"), "newest": newest_date.strftime("%Y-%m-%dT00:00:00"), "category": category}
     response = requests.get(url_get, headers=API_headers, params=params, auth=HTTPBasicAuth(username, api_key))
     if response.status_code == 200:
         return response.json()
     else:
-        logging.error(f"Error fetching workouts: {response.status_code}")
+        logging.error(f"Error fetching events for category {category}: {response.status_code}")
         return []
 
-def get_target_loads(athlete_id, username, api_key, oldest_date, newest_date):
-    url_get = f"{url_base}/eventsjson".format(athlete_id=athlete_id)
-    params = {"oldest": oldest_date.strftime("%Y-%m-%dT00:00:00"), "newest": newest_date.strftime("%Y-%m-%dT00:00:00"), "category": "TARGET"}
-    response = requests.get(url_get, headers=API_headers, params=params, auth=HTTPBasicAuth(username, api_key))
-    if response.status_code == 200:
-        return response.json()
-    else:
-        logging.error(f"Error fetching target loads: {response.status_code}")
-        return []
-
-def calculate_weekly_type_loads(workouts):
+def calculate_weekly_type_loads(workouts, race_b_events, race_c_events):
     weekly_type_loads = {}
 
-    for workout in workouts:
+    for workout in workouts + race_b_events + race_c_events:
         if 'id' not in workout:
             continue
         date = datetime.strptime(workout['start_date_local'], "%Y-%m-%dT%H:%M:%S")
@@ -98,6 +91,9 @@ def export_to_excel(weekly_type_loads, weekly_target_loads, file_path):
         for target_type in weekly_target_loads.get(year_week, {}):
             row[f"Target {target_type}"] = weekly_target_loads[year_week][target_type]
             all_types.add(target_type)
+        row["Total Actual_Load"] = sum(row.get(f"Actual {t}", 0) for t in all_types)
+        row["Total Target_Load"] = sum(row.get(f"Target {t}", 0) for t in all_types)
+        row["Load Difference"] = row["Total Actual_Load"] - row["Total Target_Load"]
         rows.append(row)
 
     df = pd.DataFrame(rows).fillna(0)
@@ -108,10 +104,10 @@ def export_to_excel(weekly_type_loads, weekly_target_loads, file_path):
         if col not in df.columns:
             df[col] = 0
     # Sort the DataFrame by week in ascending order
-    df = df[["Week"] + actual_columns + target_columns].sort_values(by="Week")
+    df = df[["Week"] + actual_columns + target_columns + ["Total Actual_Load", "Total Target_Load", "Load Difference"]].sort_values(by="Week")
 
     with pd.ExcelWriter(file_path, engine='openpyxl') as writer:
-        df.to_excel(writer, sheet_name='Weekly Type Loads', index=False)
+        df.to_excel(writer, sheet_name=ATP_loadcheck_sheet_name, index=False)
 
 def main():
     df = pd.read_excel(ATP_file_path, sheet_name=ATP_sheet_name)
@@ -120,12 +116,15 @@ def main():
     oldest_date = df['start_date_local'].min()
     newest_date = df['start_date_local'].max()
 
-    workouts = get_workouts(athlete_id, username, api_key, oldest_date, newest_date)
-    target_loads = get_target_loads(athlete_id, username, api_key, oldest_date, newest_date)
-    weekly_type_loads = calculate_weekly_type_loads(workouts)
+    workouts = get_events(athlete_id, username, api_key, oldest_date, newest_date, "WORKOUT")
+    race_b_events = get_events(athlete_id, username, api_key, oldest_date, newest_date, "RACE_B")
+    race_c_events = get_events(athlete_id, username, api_key, oldest_date, newest_date, "RACE_C")
+    target_loads = get_events(athlete_id, username, api_key, oldest_date, newest_date, "TARGET")
+    
+    weekly_type_loads = calculate_weekly_type_loads(workouts, race_b_events, race_c_events)
     weekly_target_loads = calculate_weekly_target_loads(target_loads)
 
-    export_to_excel(weekly_type_loads, weekly_target_loads, r'C:\TEMP\ATP_LOAD.xlsx')
+    export_to_excel(weekly_type_loads, weekly_target_loads, ATP_loadcheck_file_path)
 
 if __name__ == "__main__":
     main()
