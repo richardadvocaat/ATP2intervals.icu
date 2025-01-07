@@ -49,7 +49,7 @@ def calculate_weekly_type_loads(workouts):
         if 'id' not in workout:
             continue
         date = datetime.strptime(workout['start_date_local'], "%Y-%m-%dT%H:%M:%S")
-        week = date.isocalendar()[1]
+        week = f"{date.isocalendar()[1]:02d}"  # Format week to two digits
         year = date.isocalendar()[0]
         year_week = f"{year}-{week}"
         
@@ -71,18 +71,18 @@ def calculate_weekly_target_loads(target_loads):
         if 'id' not in target:
             continue
         date = datetime.strptime(target['start_date_local'], "%Y-%m-%dT%H:%M:%S")
-        week = date.isocalendar()[1]
+        week = f"{date.isocalendar()[1]:02d}"  # Format week to two digits
         year = date.isocalendar()[0]
         year_week = f"{year}-{week}"
         
-        target_load = target.get('target_load') or 0
+        load_target = target.get('load_target') or 0
         target_type = target.get('type', 'Unknown')
         
         if year_week not in weekly_target_loads:
             weekly_target_loads[year_week] = {}
         if target_type not in weekly_target_loads[year_week]:
             weekly_target_loads[year_week][target_type] = 0
-        weekly_target_loads[year_week][target_type] += target_load
+        weekly_target_loads[year_week][target_type] += load_target
 
     return weekly_target_loads
 
@@ -107,7 +107,8 @@ def export_to_excel(weekly_type_loads, weekly_target_loads, file_path):
     for col in actual_columns + target_columns:
         if col not in df.columns:
             df[col] = 0
-    df = df[["Week"] + actual_columns + target_columns]
+    # Sort the DataFrame by week in ascending order
+    df = df[["Week"] + actual_columns + target_columns].sort_values(by="Week")
 
     with pd.ExcelWriter(file_path, engine='openpyxl') as writer:
         df.to_excel(writer, sheet_name='Weekly Type Loads', index=False)
