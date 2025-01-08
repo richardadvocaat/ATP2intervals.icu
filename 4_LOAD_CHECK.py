@@ -3,6 +3,7 @@ import pandas as pd
 import requests
 from requests.auth import HTTPBasicAuth
 from datetime import datetime
+from openpyxl.utils import get_column_letter
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
@@ -13,8 +14,8 @@ def read_user_data(ATP_file_path, sheet_name="User_Data"):
 
 ATP_sheet_name = "ATP_Data"
 ATP_loadcheck_sheet_name = "Weekly Type Loads"
+ATP_loadcheck_compare_sheet_name = "Weekly Load Compare"
 ATP_file_path = r'C:\TEMP\Intervals_API_Tools_Office365_v1.6_ATP2intervals.xlsm'
-#ATP_loadcheck_file_path = r'C:\TEMP\Intervals_API_Tools_Office365_v1.6_ATP2intervals.xlsm'
 ATP_loadcheck_file_path = r'C:\TEMP\ATP_LOAD.xlsx'
 
 user_data = read_user_data(ATP_file_path)
@@ -79,6 +80,19 @@ def calculate_weekly_target_loads(target_loads):
 
     return weekly_target_loads
 
+def set_column_widths(worksheet):
+    for col in worksheet.columns:
+        max_length = 0
+        column = col[0].column_letter # Get the column name
+        for cell in col:
+            try:
+                if len(str(cell.value)) > max_length:
+                    max_length = len(cell.value)
+            except:
+                pass
+        adjusted_width = (max_length + 2)
+        worksheet.column_dimensions[column].width = adjusted_width
+
 def export_to_excel(weekly_type_loads, weekly_target_loads, file_path):
     rows = []
     all_types = set()
@@ -88,26 +102,47 @@ def export_to_excel(weekly_type_loads, weekly_target_loads, file_path):
         for workout_type in weekly_type_loads.get(year_week, {}):
             row[f"Actual {workout_type}"] = weekly_type_loads[year_week][workout_type]
             all_types.add(workout_type)
+        rows.append(row)
+
+    planned_df = pd.DataFrame(rows).fillna(0)
+    actual_columns = sorted([f"Actual {t}" for t in all_types])
+    # Ensure all columns are present in the DataFrame
+    for col in actual_columns:
+        if col not in planned_df.columns:
+            planned_df[col] = 0
+    # Sort the DataFrame by week in ascending order
+    planned_df = planned_df[["Week"] + actual_columns].sort_values(by="Week")
+
+    rows = []
+    for year_week in set(weekly_type_loads.keys()).union(weekly_target_loads.keys()):
+        row = {"Week": year_week}
+        for workout_type in weekly_type_loads.get(year_week, {}):
+            row[f"Actual {workout_type}"] = weekly_type_loads[year_week][workout_type]
         for target_type in weekly_target_loads.get(year_week, {}):
             row[f"Target {target_type}"] = weekly_target_loads[year_week][target_type]
-            all_types.add(target_type)
         row["Total Actual_Load"] = sum(row.get(f"Actual {t}", 0) for t in all_types)
         row["Total Target_Load"] = sum(row.get(f"Target {t}", 0) for t in all_types)
         row["Load Difference"] = row["Total Actual_Load"] - row["Total Target_Load"]
         rows.append(row)
 
-    df = pd.DataFrame(rows).fillna(0)
-    actual_columns = sorted([f"Actual {t}" for t in all_types])
+    compare_df = pd.DataFrame(rows).fillna(0)
     target_columns = sorted([f"Target {t}" for t in all_types])
     # Ensure all columns are present in the DataFrame
     for col in actual_columns + target_columns:
-        if col not in df.columns:
-            df[col] = 0
+        if col not in compare_df.columns:
+            compare_df[col] = 0
     # Sort the DataFrame by week in ascending order
-    df = df[["Week"] + actual_columns + target_columns + ["Total Actual_Load", "Total Target_Load", "Load Difference"]].sort_values(by="Week")
+    compare_df = compare_df[["Week"] + actual_columns + target_columns + ["Total Actual_Load", "Total Target_Load", "Load Difference"]].sort_values(by="Week")
 
     with pd.ExcelWriter(file_path, engine='openpyxl') as writer:
-        df.to_excel(writer, sheet_name=ATP_loadcheck_sheet_name, index=False)
+        planned_df.to_excel(writer, sheet_name=ATP_loadcheck_sheet_name, index=False)
+        compare_df.to_excel(writer, sheet_name=ATP_loadcheck_compare_sheet_name, index=False)
+        planned_ws = writer.sheets[ATP_loadcheck_sheet_name]
+        compare_ws = writer.sheets[ATP_loadcheck_compare_sheet_name]
+        
+        # Set column widths
+        set_column_widths(planned_ws)
+        set_column_widths(compare_ws)
 
 def main():
     df = pd.read_excel(ATP_file_path, sheet_name=ATP_sheet_name)
