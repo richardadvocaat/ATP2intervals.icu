@@ -67,7 +67,7 @@ def create_update_or_delete_target_event(start_date, load_target, time_target, d
     time_target = time_target or 0
     distance_target = distance_target or 0
 
-    if activity_type in ["Ride", "Run"]:
+    if activity_type not in ["Swim", "OpenWaterSwim"]:  #all sporttypes that are given in meters/yards instead of km/mi.
         distance_target *= distance_conversion_factor(unit_preference)
 
     post_data = {
