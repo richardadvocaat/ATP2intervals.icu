@@ -29,6 +29,11 @@ Find more information about ATP on the [intervals.icu forum](https://forum.inter
 - **Separated Functions**:
   - **Load Targets**: Uploads load targets and adds notes based on the data from the ATP.
   - **Load vs Target Load**: Handles notes related to the loads vs target load in the week before.
+- **Distance Conversion**: Converts distances for different units (metric, imperial, Rijnlands).
+- **Weekly Wellness Data**: Retrieves and calculates weekly wellness data (ctlLoad and atlLoad).
+- **Training Load Feedback**: Provides feedback on the athlete's training load for the previous week.
+- **Event Prefix Deletion**: Deletes events based on a prefix.
+- **Excel Export**: Exports data to Excel with planned loads and target loads in separate sheets, and sets column widths based on the header/name of the column.
 
 ## Usage
 
@@ -37,4 +42,5 @@ Find more information about ATP on the [intervals.icu forum](https://forum.inter
 3. **Excel Sheets**: Place the `Intervals_API_Tools_Office365_v1._ATP2intervals.xlsm` in `C:\TEMP`. (This is hardcoded now, but based on the name, there is a possibility to differentiate this)
 4. **User_Data**: In the tab User_Data you can put the athlete ID, API key, preferred unitsystem (metric or imperial) and some basic preferences like the color of the note.
 5. **Run**: Execute the scripts in the right order to sync your training plan with intervals.icu.
+
 
