@@ -11,6 +11,8 @@ Find more information about ATP on the [intervals.icu forum](https://forum.inter
 
 **The third script ([3_ATP_LOAD_feedback.py](https://github.com/richardadvocaat/ATP2intervals.icu/blob/main/3_ATP_LOAD_feedback.py))** checks if the athlete was compliant to the plan based on the total load of the prior week compared with the load of the ATL. It gives some basic feedback based on the difference in load.
 
+**The fourth script ([4_LOAD_CHECK.py](https://github.com/richardadvocaat/ATP2intervals.icu/blob/LOAD_CHECK/4_LOAD_CHECK.py))** compares the planned target loads in intervals.icu with the planned loads from the workouts. This give you as a trainer/coach an easy way to check if the WORKOUTS in intervals.icu are in line with the TARGET_LOADS from the ATP. The script makes a sheet called  ATP_LOAD.xlsx and puts in in C:\TEMP. The main sheet looks for the data in this sheet. (direct writing the data in the main sheet corrupts it...needs no be fixed.)
+
 ## Features
 
 - **Read Excel File**: Reads an Excel file containing weekly load, time, and distance targets for different activities (Bike, Run, Swim).
