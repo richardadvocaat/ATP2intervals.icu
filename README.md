@@ -29,7 +29,7 @@ Find more information about ATP on the [intervals.icu forum](https://forum.inter
 - **Separated Functions**:
   - **Load Targets**: Uploads load targets and adds notes based on the data from the ATP.
   - **Load vs Target Load**: Handles notes related to the loads vs target load in the week before.
-- **Distance Conversion**: Converts distances for different units (metric, imperial, Rijnlands).
+- **Distance Conversion**: Converts distances for different units (metric, imperial).
 - **Weekly Wellness Data**: Retrieves and calculates weekly wellness data (ctlLoad and atlLoad).
 - **Training Load Feedback**: Provides feedback on the athlete's training load for the previous week.
 - **Event Prefix Deletion**: Deletes events based on a prefix.
