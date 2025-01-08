@@ -11,6 +11,8 @@ Find more information about ATP on the [intervals.icu forum](https://forum.inter
 
 **The third script ([3_ATP_LOAD_feedback.py](https://github.com/richardadvocaat/ATP2intervals.icu/blob/main/3_ATP_LOAD_feedback.py))** checks if the athlete was compliant to the plan based on the total load of the prior week compared with the load of the ATL. It gives some basic feedback based on the difference in load.
 
+**The fourth script ([4_LOAD_CHECK.py](https://github.com/richardadvocaat/ATP2intervals.icu/blob/LOAD_CHECK/4_LOAD_CHECK.py))** compares the planned target loads in intervals.icu with the planned loads from the workouts. This give you as a trainer/coach an easy way to check if the WORKOUTS in intervals.icu are in line with the TARGET_LOADS from the ATP. The script makes a sheet called  ATP_LOAD.xlsx and puts in in C:\TEMP. The main sheet looks for the data in this sheet. (direct writing the data in the main sheet corrupts it...needs no be fixed.)
+
 ## Features
 
 - **Read Excel File**: Reads an Excel file containing weekly load, time, and distance targets for different activities (Bike, Run, Swim).
@@ -27,6 +29,11 @@ Find more information about ATP on the [intervals.icu forum](https://forum.inter
 - **Separated Functions**:
   - **Load Targets**: Uploads load targets and adds notes based on the data from the ATP.
   - **Load vs Target Load**: Handles notes related to the loads vs target load in the week before.
+- **Distance Conversion**: Converts distances for different units (metric, imperial).
+- **Weekly Wellness Data**: Retrieves and calculates weekly wellness data (ctlLoad and atlLoad).
+- **Training Load Feedback**: Provides feedback on the athlete's training load for the previous week.
+- **Event Prefix Deletion**: Deletes events based on a prefix.
+- **Excel Export**: Exports data to Excel with planned loads and target loads in separate sheets, and sets column widths based on the header/name of the column.
 
 ## Usage
 
@@ -35,4 +42,5 @@ Find more information about ATP on the [intervals.icu forum](https://forum.inter
 3. **Excel Sheets**: Place the `Intervals_API_Tools_Office365_v1._ATP2intervals.xlsm` in `C:\TEMP`. (This is hardcoded now, but based on the name, there is a possibility to differentiate this)
 4. **User_Data**: In the tab User_Data you can put the athlete ID, API key, preferred unitsystem (metric or imperial) and some basic preferences like the color of the note.
 5. **Run**: Execute the scripts in the right order to sync your training plan with intervals.icu.
+
 
