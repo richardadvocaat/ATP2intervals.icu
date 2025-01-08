@@ -20,7 +20,7 @@ def read_user_data(ATP_file_path, sheet_name="User_Data"):
 
 ATP_sheet_name = "ATP_Data"
 ATP_file_path = r'C:\TEMP\Intervals_API_Tools_Office365_v1.6_ATP2intervals.xlsm'
-parse_delay = .01
+parse_delay = .001
 
 user_data = read_user_data(ATP_file_path)
 api_key = user_data.get('API_KEY', "yourapikey")
@@ -69,7 +69,7 @@ def create_update_or_delete_target_event(start_date, load_target, time_target, d
     time_target = time_target or 0
     distance_target = distance_target or 0
 
-    if activity_type not in ["Swim", "OpenWaterSwim"]:  #all sporttypes that are given in meters/yards instead of km/mi.
+    if activity_type not in ["Swim" , "OpenWaterSwim"]: #all sporttypes that are given in meters/yards instead of km/mi.
         distance_target *= distance_conversion_factor(unit_preference)
 
     post_data = {
