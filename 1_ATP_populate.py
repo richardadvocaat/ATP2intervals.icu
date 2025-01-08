@@ -9,6 +9,8 @@ logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(level)s - %(mess
 #logging.basicConfig(level=logging.DEBUG, format='%(asctime)s - %(levelname)s - %(message)s')
 
 def format_activity_name(activity):
+    if activity.lower() == 'mountainbikeride':
+        return 'MountainBikeRide'
     return ''.join(word.capitalize() for word in activity.split('_'))
 
 def read_user_data(ATP_file_path, sheet_name="User_Data"):
