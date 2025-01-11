@@ -4,6 +4,7 @@ import requests
 from requests.auth import HTTPBasicAuth
 from datetime import datetime
 from openpyxl.utils import get_column_letter
+from openpyxl.worksheet.table import Table, TableStyleInfo
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
@@ -135,10 +136,17 @@ def export_to_excel(weekly_type_loads, weekly_target_loads, file_path):
     compare_df = compare_df[["Week"] + actual_columns + target_columns + ["Total Actual_Load", "Total Target_Load", "Load Difference"]].sort_values(by="Week")
 
     with pd.ExcelWriter(file_path, engine='openpyxl') as writer:
-        planned_df.to_excel(writer, sheet_name=ATP_loadcheck_sheet_name, index=False)
-        compare_df.to_excel(writer, sheet_name=ATP_loadcheck_compare_sheet_name, index=False)
+        planned_df.to_excel(writer, sheet_name=ATP_loadcheck_sheet_name, index=False, startrow=3)
+        compare_df.to_excel(writer, sheet_name=ATP_loadcheck_compare_sheet_name, index=False, startrow=3)
         planned_ws = writer.sheets[ATP_loadcheck_sheet_name]
         compare_ws = writer.sheets[ATP_loadcheck_compare_sheet_name]
+        
+        # Create Excel table
+        table = Table(displayName="WeeklyTypeLoadsTable", ref=f"A4:{get_column_letter(planned_ws.max_column)}{planned_ws.max_row}")
+        style = TableStyleInfo(name="TableStyleMedium9", showFirstColumn=False,
+                               showLastColumn=False, showRowStripes=True, showColumnStripes=True)
+        table.tableStyleInfo = style
+        planned_ws.add_table(table)
         
         # Set column widths
         set_column_widths(planned_ws)
