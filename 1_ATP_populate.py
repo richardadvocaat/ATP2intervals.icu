@@ -8,19 +8,15 @@ from datetime import datetime, timedelta
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(level)s - %(message)s')
 #logging.basicConfig(level=logging.DEBUG, format='%(asctime)s - %(levelname)s - %(message)s')
 
-def format_activity_name(activity):
-    if activity.lower() == 'mountainbikeride':
-        return 'MountainBikeRide'
-    return ''.join(word.capitalize() for word in activity.split('_'))
-
 def read_user_data(ATP_file_path, sheet_name="User_Data"):
     df = pd.read_excel(ATP_file_path, sheet_name=sheet_name)
     user_data = df.set_index('Key').to_dict()['Value']
     return user_data
 
+Athlete_TLA = "TLA" #Three letter Acronym of athlete.
 ATP_sheet_name = "ATP_Data"
-ATP_file_path = r'C:\TEMP\Intervals_API_Tools_Office365_v1.6_ATP2intervals.xlsm'
-parse_delay = .001
+ATP_file_path = rf"C:\TEMP\{Athlete_TLA}\Intervals_API_Tools_Office365_v1.6_ATP2intervals_{Athlete_TLA}.xlsm"
+parse_delay = .01
 
 user_data = read_user_data(ATP_file_path)
 api_key = user_data.get('API_KEY', "yourapikey")
@@ -34,6 +30,15 @@ url_base = "https://intervals.icu/api/v1/athlete/{athlete_id}"
 url_profile = f"https://intervals.icu/api/v1/athlete/{athlete_id}/profile"
 url_activities = f"https://intervals.icu/api/v1/athlete/{athlete_id}/activities"
 API_headers = {"Content-Type": "application/json"}
+
+def format_activity_name(activity):
+    if activity.lower() == 'mountainbikeride':
+        return 'MountainBikeRide'
+    if activity.lower() == 'openwaterswim':
+        return 'OpenWaterSwim'
+    if activity.lower() == 'trailrun':
+        return 'TrailRun'
+    return ''.join(word.capitalize() for word in activity.split('_'))
 
 def distance_conversion_factor(unit_preference):
     conversion_factors = {
@@ -69,7 +74,7 @@ def create_update_or_delete_target_event(start_date, load_target, time_target, d
     time_target = time_target or 0
     distance_target = distance_target or 0
 
-    if activity_type not in ["Swim" , "OpenWaterSwim"]: #all sporttypes that are given in meters/yards instead of km/mi.
+    if activity_type not in ["Swim" , "OpenwaterSwim"]: #all sporttypes that are given in meters/yards instead of km/mi.
         distance_target *= distance_conversion_factor(unit_preference)
 
     post_data = {
@@ -134,7 +139,7 @@ def main():
     for index, row in df.iterrows():
         start_date = row['start_date_local'].strftime("%Y-%m-%dT00:00:00")
         for col in df.columns:
-            if col.endswith('_load'):
+            if col.endswith('_load_target'):
                 activity = format_activity_name(col.split('_load')[0])
                 load = int(row[col])
                 time_col = f"{col.split('_load')[0]}_time"
