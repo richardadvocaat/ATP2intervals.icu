@@ -16,8 +16,9 @@ def read_user_data(ATP_file_path, sheet_name="User_Data"):
     user_data = df.set_index('Key').to_dict()['Value']
     return user_data
 
+Athlete_TLA = "TLA" #Three letter Acronym of athlete.
 ATP_sheet_name = "ATP_Data"
-ATP_file_path = r'C:\TEMP\Intervals_API_Tools_Office365_v1.6_ATP2intervals.xlsm'
+ATP_file_path = rf"C:\TEMP\{Athlete_TLA}\Intervals_API_Tools_Office365_v1.6_ATP2intervals_{Athlete_TLA}.xlsm"
 
 parse_delay = .01
 note_ATP_name = "Weekly training and focus summary of your ATP"
