@@ -6,18 +6,21 @@ from datetime import datetime
 from openpyxl.utils import get_column_letter
 from openpyxl.worksheet.table import Table, TableStyleInfo
 
-logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+#logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
 def read_user_data(ATP_file_path, sheet_name="User_Data"):
     df = pd.read_excel(ATP_file_path, sheet_name=sheet_name)
     user_data = df.set_index('Key').to_dict()['Value']
     return user_data
 
+Athlete_TLA = "TLA" #Three letter Acronym of athlete.
+ATP_file_path = rf"C:\TEMP\{Athlete_TLA}\Intervals_API_Tools_Office365_v1.6_ATP2intervals_{Athlete_TLA}.xlsm"
+
 ATP_sheet_name = "ATP_Data"
 ATP_loadcheck_sheet_name = "Weekly Type Loads"
 ATP_loadcheck_compare_sheet_name = "Weekly Load Compare"
-ATP_file_path = r'C:\TEMP\Intervals_API_Tools_Office365_v1.6_ATP2intervals.xlsm'
-ATP_loadcheck_file_path = r'C:\TEMP\ATP_LOAD.xlsx'
+#ATP_loadcheck_file_path = rf"C:\TEMP\{Athlete_TLA}\Intervals_API_Tools_Office365_v1.6_ATP2intervals_{Athlete_TLA}.xlsm"
+ATP_loadcheck_file_path = rf"C:\TEMP\{Athlete_TLA}\ATP_LOAD.xlsx"
 
 user_data = read_user_data(ATP_file_path)
 api_key = user_data.get('API_KEY', "yourapikey")
