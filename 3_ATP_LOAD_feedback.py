@@ -6,7 +6,7 @@ import time as time_module
 from datetime import datetime, timedelta
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(level)s - %(message)s')
-logging.basicConfig(level=logging.DEBUG, format='%(asctime)s - %(levelname)s - %(message)s')
+#logging.basicConfig(level=logging.DEBUG, format='%(asctime)s - %(levelname)s - %(message)s')
 
 def format_activity_name(activity):
     return ''.join(word.capitalize() for word in activity.split('_'))
@@ -16,8 +16,9 @@ def read_user_data(ATP_file_path, sheet_name="User_Data"):
     user_data = df.set_index('Key').to_dict()['Value']
     return user_data
 
+Athlete_TLA = "TLA" #Three letter Acronym of athlete.
 ATP_sheet_name = "ATP_Data"
-ATP_file_path = r'C:\TEMP\Intervals_API_Tools_Office365_v1.6_ATP2intervals.xlsm'
+ATP_file_path = rf"C:\TEMP\{Athlete_TLA}\Intervals_API_Tools_Office365_v1.6_ATP2intervals_{Athlete_TLA}.xlsm"
 
 parse_delay = .01
 note_FEEDBACK_name_template = "Weekly feedback about your training in week {last_week}"
@@ -189,13 +190,13 @@ def get_previous_week(year, week):
         return year, week - 1
     
 def calculate_total_load(row):
-    return sum(row[col] for col in row.index if col.endswith('_load'))
+    return sum(row[col] for col in row.index if col.endswith('_load_target'))
 
 def get_previous_week_sheet_load(df, previous_year, previous_week):
     previous_year_week = f"{previous_year}-{previous_week}"
     previous_week_data = df[(df['year_week'] == previous_year_week)]
     if not previous_week_data.empty:
-        return calculate_total_load(previous_week_data.iloc[0])
+        return int(calculate_total_load(previous_week_data.iloc[0]))
     return 0
 
 def calculate_weekly_loads(wellness_data):
