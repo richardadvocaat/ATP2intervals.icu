@@ -226,19 +226,19 @@ def add_load_check_description(row, previous_week_loads, previous_week_sheet_loa
     delta_ctl = ctl_load - previous_week_sheet_load
     delta_atl = atl_load - previous_week_sheet_load
 
-    feedback = "Good."
+    feedback = "You were compliant to the ATP! Keep doing this!"
     if previous_week_sheet_load == 0 and ctl_load == 0 and atl_load == 0:
         feedback = 'Nothing to check now.'
     elif ctl_load == 0 and atl_load == 0:
-        feedback = "Nothing done?"
+        feedback = "Nothing done? Let's talk about this."
     elif previous_week_sheet_load == 0:
-        feedback = "There was nothing to do...?"
+        feedback = "There was nothing to do this week. :-)"
     elif delta_ctl == 0 or delta_atl == 0:
-        feedback = "Perfect!"
+        feedback = "You were perfectly compliant to the ATP!"
     elif delta_ctl > 0.2 * previous_week_sheet_load or delta_atl > 0.2 * previous_week_sheet_load:
-        feedback = "You did too much."
+        feedback = "You did too much. No problem, but be aware of overreaching."
     elif delta_ctl < -0.2 * previous_week_sheet_load or delta_atl < -0.2 * previous_week_sheet_load:
-        feedback = "You did too little."
+        feedback = "You did too little. No problem, but don't make a habit of it."
 
     description += f"\n\nYour total trainingload for the last week was: **{ctl_load}**. Compared to the planned load: **{previous_week_sheet_load}**. Feedback: **{feedback}**"
     
