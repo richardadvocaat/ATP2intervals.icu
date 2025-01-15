@@ -159,9 +159,6 @@ def main():
     df = pd.read_excel(ATP_file_path, sheet_name=ATP_sheet_name)
     df.fillna(0, inplace=True)
 
-    # Ensure 'start_date_local' is parsed as datetime
-    df['start_date_local'] = pd.to_datetime(df['start_date_local'], errors='coerce')
-    
     oldest_date = df['start_date_local'].min()
     newest_date = df['start_date_local'].max()
 
