@@ -36,6 +36,8 @@ def format_activity_name(activity):
         return 'MountainBikeRide'
     if activity.lower() == 'openwaterswim':
         return 'OpenWaterSwim'
+    if activity.lower() == 'gravelride':
+        return 'GravelRide'
     if activity.lower() == 'trailrun':
         return 'TrailRun'
     return ''.join(word.capitalize() for word in activity.split('_'))
@@ -66,15 +68,15 @@ def delete_events(athlete_id, username, api_key, oldest_date, newest_date, categ
         time_module.sleep(parse_delay)
 
 def create_update_or_delete_target_event(start_date, load_target, time_target, distance_target, activity_type, events, athlete_id, username, api_key):
-    if load_target is None or load_target == 0:
-        logging.info(f"Skipping {activity_type} event on {start_date} due to None or 0 load target.")
+    if activity_type is None or load_target is None or load_target == 0:
+        logging.info(f"Skipping event on {start_date} due to None activity type or None/0 load target.")
         return
 
     load_target = load_target or 0
     time_target = time_target or 0
     distance_target = distance_target or 0
 
-    if activity_type not in ["Swim" , "OpenwaterSwim"]: #all sporttypes that are given in meters/yards instead of km/mi.
+    if activity_type not in ["Swim", "OpenwaterSwim"]:  # all sport types that are given in meters/yards instead of km/mi.
         distance_target *= distance_conversion_factor(unit_preference)
 
     post_data = {
@@ -126,6 +128,16 @@ def main():
     df = pd.read_excel(ATP_file_path, sheet_name=ATP_sheet_name)
     df.fillna(0, inplace=True)
 
+    # Ensure 'start_date_local' is parsed as datetime
+    df['start_date_local'] = pd.to_datetime(df['start_date_local'], errors='coerce')
+    
+    # Remove rows where 'start_date_local' could not be parsed
+    df = df.dropna(subset=['start_date_local'])
+    
+    if df.empty:
+        logging.error("No valid dates found in 'start_date_local'.")
+        return
+    
     oldest_date = df['start_date_local'].min().strftime("%Y-%m-%dT00:00:00")
     newest_date = df['start_date_local'].max().strftime("%Y-%m-%dT00:00:00")
 
