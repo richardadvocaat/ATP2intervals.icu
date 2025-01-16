@@ -32,8 +32,6 @@ url_profile = f"https://intervals.icu/api/v1/athlete/{athlete_id}/profile"
 url_activities = f"https://intervals.icu/api/v1/athlete/{athlete_id}/activities"
 API_headers = {"Content-Type": "application/json"}
 
-
-
 def get_last_day_of_week(date):
     return date + timedelta(days=(6 - date.weekday()))
 
@@ -44,16 +42,22 @@ def get_period_end_date(df, start_index):
             return get_last_day_of_week(df.at[i-1, 'start_date_local'])
     return get_last_day_of_week(df.at[len(df)-1, 'start_date_local'])
 
-def create_note_event(start_date, end_date, description, athlete_id, username, api_key):
+def create_note_event(start_date, end_date, description, period, athlete_id, username, api_key):
     url_base = f"https://intervals.icu/api/v1/athlete/{athlete_id}"
     url_post = f"{url_base}/events"
     API_headers = {"Content-Type": "application/json"}
+    
+    period_full = period
+    if period == "Trans":
+        period_full = "Transition"
+    elif period == "Prep":
+        period_full = "Preparation"
     
     post_data = {
         "category": "NOTE",
         "start_date_local": start_date.strftime("%Y-%m-%dT00:00:00"),
         "end_date_local": end_date.strftime("%Y-%m-%dT00:00:00"),
-        "name": "Training Period",
+        "name": f"Training Period: {period_full}",
         "description": description,
         "color": "blue"
     }
@@ -77,7 +81,7 @@ def main():
         if i == 0 or df.at[i-1, 'period'] != period:
             end_date = get_period_end_date(df, i)
             description = f"You are in the **{period}-period** (Which goes from {start_date.strftime('%Y-%m-%d')} to {end_date.strftime('%Y-%m-%d')})"
-            create_note_event(start_date, end_date, description, athlete_id, username, api_key)
+            create_note_event(start_date, end_date, description, period, athlete_id, username, api_key)
 
 if __name__ == "__main__":
     main()
