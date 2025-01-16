@@ -42,6 +42,18 @@ def get_period_end_date(df, start_index):
             return get_last_day_of_week(df.at[i-1, 'start_date_local'])
     return get_last_day_of_week(df.at[len(df)-1, 'start_date_local'])
 
+def get_note_color(period):
+    color_mapping = {
+        "Base": "yellow",
+        "Peak": "orange",
+        "Race": "red",
+        "Trans": "green",
+        "Prep": "blue",
+        "Recovery": "purple",
+        "Rest": "cyan"
+    }
+    return color_mapping.get(period, "black")  # Default to black if period not found
+
 def create_note_event(start_date, end_date, description, period, athlete_id, username, api_key):
     url_base = f"https://intervals.icu/api/v1/athlete/{athlete_id}"
     url_post = f"{url_base}/events"
@@ -53,13 +65,15 @@ def create_note_event(start_date, end_date, description, period, athlete_id, use
     elif period == "Prep":
         period_full = "Preparation"
     
+    color = get_note_color(period)
+    
     post_data = {
         "category": "NOTE",
         "start_date_local": start_date.strftime("%Y-%m-%dT00:00:00"),
         "end_date_local": end_date.strftime("%Y-%m-%dT00:00:00"),
         "name": f"Training Period: {period_full}",
         "description": description,
-        "color": "blue"
+        "color": color
     }
     
     response_post = requests.post(url_post, headers=API_headers, json=post_data, auth=HTTPBasicAuth(username, api_key))
