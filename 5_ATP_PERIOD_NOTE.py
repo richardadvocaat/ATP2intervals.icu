@@ -50,7 +50,8 @@ def get_note_color(period):
         "Trans": "green",
         "Prep": "blue",
         "Recovery": "purple",
-        "Rest": "cyan"
+        "Rest": "cyan",
+        "Build": "blue"
     }
     return color_mapping.get(period, "black")  # Default to black if period not found
 
