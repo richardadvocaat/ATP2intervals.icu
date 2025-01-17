@@ -84,7 +84,7 @@ def create_note_event(start_date, end_date, description, period, athlete_id, use
     post_data = {
         "category": "NOTE",
         "start_date_local": start_date.strftime("%Y-%m-%dT00:00:00"),
-        "end_date_local": end_date.strftime("%Y-%m-%dT00:00:00"),
+        "end_date_local": (end_date + timedelta(days=1)).strftime("%Y-%m-%dT00:00:00"),  # Add an extra day
         "name": f"{note_PERIOD_name} {period_full}",
         "description": description,
         "color": color
@@ -94,7 +94,7 @@ def create_note_event(start_date, end_date, description, period, athlete_id, use
     if response_post.status_code == 200:
         logging.info(f"New event created from {start_date} to {end_date}!")
     else:
-        logging.error(f"Error creating event: {response_post.status_code}")
+        logging.error(f"Error creating event: {response_post.status_code} - {response_post.text}")
 
 def get_first_a_event(df, note_event_date):
     note_date = datetime.strptime(note_event_date, "%Y-%m-%dT00:00:00")
@@ -120,6 +120,7 @@ def main():
     
     # Explicitly cast columns to compatible dtype
     df['period'] = df['period'].astype(str)
+    df['start_date_local'] = df['start_date_local'].astype('datetime64[ns]')
     df.fillna('', inplace=True)
     
     # Define date range for deleting events
@@ -140,4 +141,4 @@ def main():
             create_note_event(start_date, end_date, description, period, athlete_id, username, api_key)
 
 if __name__ == "__main__":
-    main()    
+    main()
