@@ -4,14 +4,14 @@ import requests
 from requests.auth import HTTPBasicAuth
 from datetime import datetime, timedelta
 
-logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+#logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
 def read_user_data(ATP_file_path, sheet_name="User_Data"):
     df = pd.read_excel(ATP_file_path, sheet_name=sheet_name)
     user_data = df.set_index('Key').to_dict()['Value']
     return user_data
 
-Athlete_TLA = "RAA" #Three letter Acronym of athlete.
+Athlete_TLA = "RAA" # Three letter Acronym of athlete.
 ATP_sheet_name = "ATP_Data"
 ATP_file_path = rf"C:\TEMP\{Athlete_TLA}\Intervals_API_Tools_Office365_v1.6_ATP2intervals_{Athlete_TLA}.xlsm"
 
@@ -27,7 +27,7 @@ note_ATP_color = user_data.get('NOTE_ATP_COLOR', "red")
 note_FEEDBACK_color = user_data.get('NOTE_FEEDBACK_COLOR', "blue")
 do_at_rest = user_data.get('Do_At_Rest', "Do nothing!")
 
-url_base = "https://intervals.icu/api/v1/athlete/{athlete_id}"
+url_base = f"https://intervals.icu/api/v1/athlete/{athlete_id}"
 url_profile = f"https://intervals.icu/api/v1/athlete/{athlete_id}/profile"
 url_activities = f"https://intervals.icu/api/v1/athlete/{athlete_id}/activities"
 API_headers = {"Content-Type": "application/json"}
@@ -54,6 +54,23 @@ def get_note_color(period):
         "Build": "blue"
     }
     return color_mapping.get(period, "black")  # Default to black if period not found
+
+def delete_events(athlete_id, username, api_key, oldest_date, newest_date, category, name_prefix):
+    url_get = f"{url_base}/eventsjson".format(athlete_id=athlete_id)
+    params = {"oldest": oldest_date, "newest": newest_date, "category": category}
+    response_get = requests.get(url_get, headers=API_headers, params=params, auth=HTTPBasicAuth(username, api_key))
+    events = response_get.json() if response_get.status_code == 200 else []
+
+    for event in events:
+        if name_prefix and not event['name'].startswith(name_prefix):
+            continue
+        event_id = event['id']
+        url_del = f"{url_base}/events/{event_id}".format(athlete_id=athlete_id)
+        response_del = requests.delete(url_del, headers=API_headers, auth=HTTPBasicAuth(username, api_key))
+        if response_del.status_code == 200:
+            logging.info(f"Deleted {category.lower()} event ID={event_id}")
+        else:
+            logging.error(f"Error deleting {category.lower()} event ID={event_id}: {response_del.status_code}")
 
 def create_note_event(start_date, end_date, description, period, athlete_id, username, api_key):
     url_base = f"https://intervals.icu/api/v1/athlete/{athlete_id}"
@@ -84,10 +101,19 @@ def create_note_event(start_date, end_date, description, period, athlete_id, use
         logging.error(f"Error creating event: {response_post.status_code}")
 
 def main():
-    
-    df = pd.read_excel(ATP_file_path, sheet_name=ATP_sheet_name)
+    df = pd.read_excel(ATP_file_path, sheet_name=ATP_sheet_name, engine='openpyxl')
     df['start_date_local'] = pd.to_datetime(df['start_date_local'], format='%d-%b')
+    
+    # Explicitly cast columns to compatible dtype
+    df['period'] = df['period'].astype(str)
     df.fillna('', inplace=True)
+    
+    # Define date range for deleting events
+    oldest_date = df['start_date_local'].min().strftime("%Y-%m-%dT00:00:00")
+    newest_date = df['start_date_local'].max().strftime("%Y-%m-%dT00:00:00")
+    
+    # Delete existing period notes
+    delete_events(athlete_id, username, api_key, oldest_date, newest_date, "NOTE", "Training Period")
     
     for i in range(len(df)):
         start_date = df.at[i, 'start_date_local']
