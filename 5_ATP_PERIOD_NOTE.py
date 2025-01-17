@@ -11,7 +11,7 @@ def read_user_data(ATP_file_path, sheet_name="User_Data"):
     user_data = df.set_index('Key').to_dict()['Value']
     return user_data
 
-Athlete_TLA = "RAA" # Three letter Acronym of athlete.
+Athlete_TLA = "TLA" # Three letter Acronym of athlete.
 ATP_sheet_name = "ATP_Data"
 ATP_file_path = rf"C:\TEMP\{Athlete_TLA}\Intervals_API_Tools_Office365_v1.6_ATP2intervals_{Athlete_TLA}.xlsm"
 
@@ -106,7 +106,12 @@ def get_first_a_event(df, note_event_date):
 
 def populate_race_description(description, first_a_event):
     if first_a_event:
-        description = f"- This (part) of the plan aims for **{first_a_event}**.\n\n" + description
+        description = f"This (part) of the plan aims for **{first_a_event}**.\n\n" + description
+    return description
+
+def create_description(period, start_date, end_date, first_a_event):
+    description = f"You are in the **{period}-period** (from {start_date.strftime('%d-%m-%Y')} to {end_date.strftime('%d-%m-%Y')})"
+    description = populate_race_description(description, first_a_event)
     return description
 
 def main():
@@ -131,9 +136,8 @@ def main():
         if i == 0 or df.at[i-1, 'period'] != period:
             end_date = get_period_end_date(df, i)
             first_a_event = get_first_a_event(df, start_date.strftime("%Y-%m-%dT00:00:00"))
-            description = f"You are in the **{period}-period** (Which goes from {start_date.strftime('%Y-%m-%d')} to {end_date.strftime('%Y-%m-%d')})"
-            description = populate_race_description(description, first_a_event)
+            description = create_description(period, start_date, end_date, first_a_event)
             create_note_event(start_date, end_date, description, period, athlete_id, username, api_key)
 
 if __name__ == "__main__":
-    main() 
+    main()    
