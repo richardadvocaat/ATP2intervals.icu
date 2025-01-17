@@ -4,7 +4,7 @@ import requests
 from requests.auth import HTTPBasicAuth
 from datetime import datetime, timedelta
 
-#logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
 def read_user_data(ATP_file_path, sheet_name="User_Data"):
     df = pd.read_excel(ATP_file_path, sheet_name=sheet_name)
@@ -39,6 +39,7 @@ def get_period_end_date(df, start_index):
     return get_last_day_of_week(df.at[len(df)-1, 'start_date_local'])
 
 def get_note_color(period):
+    base_period = period.split()[0]  # Get the base period name (e.g., "Base" from "Base 1")
     color_mapping = {
         "Base": "yellow",
         "Peak": "orange",
@@ -49,7 +50,7 @@ def get_note_color(period):
         "Rest": "cyan",
         "Build": "blue"
     }
-    return color_mapping.get(period, "black")  # Default to black if period not found
+    return color_mapping.get(base_period, "black")  # Default to black if base period not found
 
 def delete_events(athlete_id, username, api_key, oldest_date, newest_date, category, name_prefix):
     url_get = f"{url_base}/eventsjson".format(athlete_id=athlete_id)
