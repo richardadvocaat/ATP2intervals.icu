@@ -16,7 +16,7 @@ ATP_sheet_name = "ATP_Data"
 ATP_file_path = rf"C:\TEMP\{Athlete_TLA}\Intervals_API_Tools_Office365_v1.6_ATP2intervals_{Athlete_TLA}.xlsm"
 
 parse_delay = .01
-note_PERIOD_name = 'Training Periode:'
+note_PERIOD_name = 'Period:'
 
 user_data = read_user_data(ATP_file_path)
 api_key = user_data.get('API_KEY', "yourapikey")
