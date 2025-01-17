@@ -4,7 +4,7 @@ To Do: Store parameters for the coach in a separate document where also the coac
 The idea is that it must be an easy job to populate intervals.icu with the coach's made ATP.
 
 ## What's in it
-**The first Python script ([1_ATP_populate.py](https://github.com/richardadvocaat/ATP2intervals.icu/blob/main/1_ATP_populate.py))** automates the process of sending an annual training plan (ATP) with weekly (TSS, Time and/or distance)-loads for multiple sports. It reads data from the ATP Excel file made by [Gerald](https://forum.intervals.icu/u/gerald/summary) These files can be found on [Google Drive](https://drive.google.com/drive/folders/1WhIOf2XkGiZBEN_7tX2PSShmF-QXBnBF).
+**The first Python script ([1_ATP_populate.py](https://github.com/richardadvocaat/ATP2intervals.icu/blob/main/1_ATP_populate.py))** automates the process of sending an annual training plan (ATP) with weekly (TSS, Time and/or distance)-loads for multiple sports. It reads data from the ATP Excel file based on the one made by [Gerald](https://forum.intervals.icu/u/gerald/summary) These files can be found on [Google Drive](https://drive.google.com/drive/folders/1WhIOf2XkGiZBEN_7tX2PSShmF-QXBnBF).
 Find more information about ATP on the [intervals.icu forum](https://forum.intervals.icu/t/apps-in-excel-a-guide-to-getting-started/20844).
 
 **The second script ([2_ATP_NOTES.py](https://github.com/richardadvocaat/ATP2intervals.icu/blob/main/2_ATP_NOTES.py))** makes notes with multiple comments for your athlete to intervals.icu. It reads data like focus on "Most Important Workouts", tests and coming events from the ATP Excel file made by [Gerald](https://forum.intervals.icu/u/gerald/summary) 
