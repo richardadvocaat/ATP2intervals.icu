@@ -1,6 +1,6 @@
 # ATP2intervals.icu
 
-This is a set of scripts that transfers data from an Annual Training PLan to intervals.icu. The idea is tha you can trickle down a weekly load to different types of sport. There is also a script that gives a weekly summaru and a script that gives feedback on the week prior.
+This is a set of scripts that transfers data from an Annual Training Plan to intervals.icu. The idea is that you can trickle down a weekly load to different types of sport and sent them to intervals.icu as a load_target. There is also a script that gives a weekly summary and a script that gives feedback on the week prior.
 
 To Do: Store parameters for the coach in a separate document where also the coached athlete names are stored. (or get this list from intervals.icu.)
 The idea is that it must be an easy job to populate intervals.icu with the coach's made ATP.
