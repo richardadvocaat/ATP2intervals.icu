@@ -53,7 +53,7 @@ def get_note_color(period):
     return color_mapping.get(base_period, "black")  # Default to black if base period not found
 
 def delete_events(athlete_id, username, api_key, oldest_date, newest_date, category, name_prefix):
-    url_get = f"{url_base}/eventsjson".format(athlete_id=athlete_id)
+    url_get = f"{url_base}/events".format(athlete_id=athlete_id)
     params = {"oldest": oldest_date, "newest": newest_date, "category": category}
     response_get = requests.get(url_get, headers=API_headers, params=params, auth=HTTPBasicAuth(username, api_key))
     events = response_get.json() if response_get.status_code == 200 else []
@@ -129,7 +129,7 @@ def main():
     newest_date = df['start_date_local'].max().strftime("%Y-%m-%dT00:00:00")
     
     # Delete existing period notes
-    delete_events(athlete_id, username, api_key, oldest_date, newest_date, "NOTE", "Training Period")
+    delete_events(athlete_id, username, api_key, oldest_date, newest_date, "NOTE", note_PERIOD_name)
     
     for i in range(len(df)):
         start_date = df.at[i, 'start_date_local']
