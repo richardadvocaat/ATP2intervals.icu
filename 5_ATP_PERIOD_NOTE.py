@@ -16,16 +16,12 @@ ATP_sheet_name = "ATP_Data"
 ATP_file_path = rf"C:\TEMP\{Athlete_TLA}\Intervals_API_Tools_Office365_v1.6_ATP2intervals_{Athlete_TLA}.xlsm"
 
 parse_delay = .01
-note_ATP_name = "Weekly training and focus summary of your ATP"
+note_PERIOD_name = 'Training Periode:'
 
 user_data = read_user_data(ATP_file_path)
 api_key = user_data.get('API_KEY', "yourapikey")
 username = user_data.get('USERNAME', "API_KEY")
 athlete_id = user_data.get('ATHLETE_ID', "athleteid")
-unit_preference = user_data.get('DISTANCE_SYSTEM', "metric")
-note_ATP_color = user_data.get('NOTE_ATP_COLOR', "red")
-note_FEEDBACK_color = user_data.get('NOTE_FEEDBACK_COLOR', "blue")
-do_at_rest = user_data.get('Do_At_Rest', "Do nothing!")
 
 url_base = f"https://intervals.icu/api/v1/athlete/{athlete_id}"
 url_profile = f"https://intervals.icu/api/v1/athlete/{athlete_id}/profile"
@@ -89,7 +85,7 @@ def create_note_event(start_date, end_date, description, period, athlete_id, use
         "category": "NOTE",
         "start_date_local": start_date.strftime("%Y-%m-%dT00:00:00"),
         "end_date_local": end_date.strftime("%Y-%m-%dT00:00:00"),
-        "name": f"Training Period: {period_full}",
+        "name": f"{note_PERIOD_name} {period_full}",
         "description": description,
         "color": color
     }
@@ -99,6 +95,19 @@ def create_note_event(start_date, end_date, description, period, athlete_id, use
         logging.info(f"New event created from {start_date} to {end_date}!")
     else:
         logging.error(f"Error creating event: {response_post.status_code}")
+
+def get_first_a_event(df, note_event_date):
+    note_date = datetime.strptime(note_event_date, "%Y-%m-%dT00:00:00")
+    for index, row in df.iterrows():
+        event_date = pd.to_datetime(row.get('start_date_local'))
+        if event_date > note_date and str(row.get('cat', '')).upper() == 'A' and row.get('race', '').strip():
+            return row.get('race', '').strip()
+    return None
+
+def populate_race_description(description, first_a_event):
+    if first_a_event:
+        description = f"- This (part) of the plan aims for **{first_a_event}**.\n\n" + description
+    return description
 
 def main():
     df = pd.read_excel(ATP_file_path, sheet_name=ATP_sheet_name, engine='openpyxl')
@@ -121,8 +130,10 @@ def main():
         
         if i == 0 or df.at[i-1, 'period'] != period:
             end_date = get_period_end_date(df, i)
+            first_a_event = get_first_a_event(df, start_date.strftime("%Y-%m-%dT00:00:00"))
             description = f"You are in the **{period}-period** (Which goes from {start_date.strftime('%Y-%m-%d')} to {end_date.strftime('%Y-%m-%d')})"
+            description = populate_race_description(description, first_a_event)
             create_note_event(start_date, end_date, description, period, athlete_id, username, api_key)
 
 if __name__ == "__main__":
-    main()
+    main() 
