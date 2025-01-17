@@ -1,6 +1,6 @@
 # ATP2intervals.icu
 
-To Do: make path to the ATP file dependend of the athlete's name. Store parameters for the coach in a separate document where also the coached athlete names are stored. (or get this list from intervals.icu.)
+To Do: Store parameters for the coach in a separate document where also the coached athlete names are stored. (or get this list from intervals.icu.)
 The idea is that it must be an easy job to populate intervals.icu with the coach's made ATP.
 
 ## What's in it
