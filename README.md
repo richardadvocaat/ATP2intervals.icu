@@ -1,8 +1,8 @@
 # ATP2intervals.icu
 
-This is a set of scripts that transfers data from an Annual Training Plan to intervals.icu. The idea is that you can trickle down a weekly load to different types of sport and sent them to intervals.icu as a load_target. There is also a script that gives a weekly summary and a script that gives feedback on the week prior.
+This is a set of scripts that transfers data from an Annual Training Plan to intervals.icu. The idea is that you can trickle down a weekly load to different types of sport and send them to intervals.icu.
 
-To Do: Store parameters for the coach in a separate document where also the coached athlete names are stored. (or get this list from intervals.icu.)
+To Do: Store parameters for the coach in a separate document where the coached athlete names are also stored. (or get this list from intervals.icu.)
 The idea is that it must be an easy job to populate intervals.icu with the coach's made ATP.
 
 ## What's in it
@@ -45,5 +45,6 @@ Find more information about ATP on the [intervals.icu forum](https://forum.inter
 1. **Setup**: Ensure you have the required Python libraries installed (`logging`, `os`, `pandas`, `requests`).
 2. **Configuration**: Update the user variables at the top of the script with your Excel file path, sheet name.
 3. **Excel Sheets**: Place the `Intervals_API_Tools_Office365_v1._ATP2intervals_TLA.xlsm` in `C:\TEMP\TLA`. (TLA = e.g. RAA, so rename the sheet to Intervals_API_Tools_Office365_v1._ATP2intervals_[RAA].xlsm).
-4. **User_Data**: In the tab User_Data you can put the athlete ID, API key, preferred unitsystem (metric or imperial) and some basic preferences like the color of the note.
+4. **User_Data**: In the tab User_Data you can put the athlete ID, API key, preferred unit system (metric or imperial) and some basic preferences like the color of the note.
 5. **Run**: Execute the scripts in the right order to sync your training plan with intervals.icu.
+
