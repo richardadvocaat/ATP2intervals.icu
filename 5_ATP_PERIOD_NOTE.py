@@ -11,7 +11,7 @@ def read_user_data(ATP_file_path, sheet_name="User_Data"):
     user_data = df.set_index('Key').to_dict()['Value']
     return user_data
 
-Athlete_TLA = "RAA" # Three letter Acronym of athlete.
+Athlete_TLA = "TLA" # Three letter Acronym of athlete.
 ATP_sheet_name = "ATP_Data"
 ATP_file_path = rf"C:\TEMP\{Athlete_TLA}\Intervals_API_Tools_Office365_v1.6_ATP2intervals_{Athlete_TLA}.xlsm"
 
@@ -38,18 +38,17 @@ def get_period_end_date(df, start_index):
             return get_last_day_of_week(df.at[i-1, 'start_date_local'])
     return get_last_day_of_week(df.at[len(df)-1, 'start_date_local'])
 
-
 def get_note_color(period):
     base_period = period.split()[0]  # Get the base period name (e.g., "Base" from "Base 1")
     color_mapping = {
-        "Base"          : "yellow",
-        "Peak"          : "orange",
-        "Race"          : "red",
-        "Transition"    : "green",
-        "Preparation"   : "blue",
-        "Recovery"      : "purple",
-        "Rest"          : "cyan",
-        "Build"         : "blue"
+        "Base": "yellow",
+        "Peak": "orange",
+        "Race": "red",
+        "Transition": "green",
+        "Preparation": "blue",
+        "Recovery": "purple",
+        "Rest": "cyan",
+        "Build": "blue"
     }
     return color_mapping.get(base_period, "black")  # Default to black if base period not found
 
@@ -136,7 +135,7 @@ def main():
     newest_date = df['start_date_local'].max().strftime("%Y-%m-%dT00:00:00")
 
     # Delete existing period notes
-    delete_events(athlete_id, username, api_key, oldest_date, newest_date, "NOTE", "Training Period")
+    delete_events(athlete_id, username, api_key, oldest_date, newest_date, "NOTE", note_PERIOD_name)
 
     for i in range(len(df)):
         start_date = df.at[i, 'start_date_local']
