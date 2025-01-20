@@ -11,7 +11,7 @@ def read_user_data(ATP_file_path, sheet_name="User_Data"):
     user_data = df.set_index('Key').to_dict()['Value']
     return user_data
 
-Athlete_TLA = "TLA" # Three letter Acronym of athlete.
+Athlete_TLA = "RAA" # Three letter Acronym of athlete.
 ATP_sheet_name = "ATP_Data"
 ATP_file_path = rf"C:\TEMP\{Athlete_TLA}\Intervals_API_Tools_Office365_v1.6_ATP2intervals_{Athlete_TLA}.xlsm"
 
@@ -38,17 +38,18 @@ def get_period_end_date(df, start_index):
             return get_last_day_of_week(df.at[i-1, 'start_date_local'])
     return get_last_day_of_week(df.at[len(df)-1, 'start_date_local'])
 
+
 def get_note_color(period):
     base_period = period.split()[0]  # Get the base period name (e.g., "Base" from "Base 1")
     color_mapping = {
-        "Base": "yellow",
-        "Peak": "orange",
-        "Race": "red",
-        "Trans": "green",
-        "Prep": "blue",
-        "Recovery": "purple",
-        "Rest": "cyan",
-        "Build": "blue"
+        "Base"          : "yellow",
+        "Peak"          : "orange",
+        "Race"          : "red",
+        "Transition"    : "green",
+        "Preparation"   : "blue",
+        "Recovery"      : "purple",
+        "Rest"          : "cyan",
+        "Build"         : "blue"
     }
     return color_mapping.get(base_period, "black")  # Default to black if base period not found
 
@@ -69,33 +70,33 @@ def delete_events(athlete_id, username, api_key, oldest_date, newest_date, categ
         else:
             logging.error(f"Error deleting {category.lower()} event ID={event_id}: {response_del.status_code}")
 
+def handle_period_name(period):
+    period = period.strip()
+    if period == "Trans":
+        return "Transition"
+    elif period == "Prep":
+        return "Preparation"
+    elif period and period[-1].isdigit() == False:
+        return period.strip()
+    return period
 
 def create_note_event(start_date, end_date, description, period, athlete_id, username, api_key):
     url_base = f"https://intervals.icu/api/v1/athlete/{athlete_id}"
     url_post = f"{url_base}/events"
     API_headers = {"Content-Type": "application/json"}
-    
-    period_full = period
-    if period == "Trans":
-        period_full = "Transition"
-    elif period == "Trans ":
-            period_full = "Transition"
-    elif period == "Prep":
-        period_full = "Preparation"
-    elif period == "Prep ":
-        period_full = "Preparation"
-    
+
+    period = handle_period_name(period)
     color = get_note_color(period)
-    
+
     post_data = {
         "category": "NOTE",
         "start_date_local": start_date.strftime("%Y-%m-%dT00:00:00"),
         "end_date_local": (end_date + timedelta(days=1)).strftime("%Y-%m-%dT00:00:00"),  # Add an extra day
-        "name": f"{note_PERIOD_name} {period_full}",
+        "name": f"{note_PERIOD_name} {period}",
         "description": description,
         "color": color
     }
-    
+
     response_post = requests.post(url_post, headers=API_headers, json=post_data, auth=HTTPBasicAuth(username, api_key))
     if response_post.status_code == 200:
         logging.info(f"New event created from {start_date} to {end_date}!")
@@ -116,6 +117,7 @@ def populate_race_description(description, first_a_event):
     return description
 
 def create_description(period, start_date, end_date, first_a_event):
+    period = handle_period_name(period)
     description = f"You are in the **{period}-period** (from {start_date.strftime('%d-%m-%Y')} to {end_date.strftime('%d-%m-%Y')})"
     description = populate_race_description(description, first_a_event)
     return description
@@ -123,23 +125,23 @@ def create_description(period, start_date, end_date, first_a_event):
 def main():
     df = pd.read_excel(ATP_file_path, sheet_name=ATP_sheet_name, engine='openpyxl')
     df['start_date_local'] = pd.to_datetime(df['start_date_local'], format='%d-%b')
-    
+
     # Explicitly cast columns to compatible dtype
     df['period'] = df['period'].astype(str)
     df['start_date_local'] = df['start_date_local'].astype('datetime64[ns]')
     df.fillna('', inplace=True)
-    
+
     # Define date range for deleting events
     oldest_date = df['start_date_local'].min().strftime("%Y-%m-%dT00:00:00")
     newest_date = df['start_date_local'].max().strftime("%Y-%m-%dT00:00:00")
-    
+
     # Delete existing period notes
     delete_events(athlete_id, username, api_key, oldest_date, newest_date, "NOTE", "Training Period")
-    
+
     for i in range(len(df)):
         start_date = df.at[i, 'start_date_local']
         period = df.at[i, 'period']
-        
+
         if i == 0 or df.at[i-1, 'period'] != period:
             end_date = get_period_end_date(df, i)
             first_a_event = get_first_a_event(df, start_date.strftime("%Y-%m-%dT00:00:00"))
