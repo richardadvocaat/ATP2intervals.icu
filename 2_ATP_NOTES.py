@@ -120,7 +120,6 @@ def get_last_week_load(athlete_id, username, api_key, note_event_date):
     
     return last_week_load
 
-
 def delete_events_with_prefix(athlete_id, username, api_key, oldest_date, newest_date, category, name_prefix):
     url_get = f"{url_base}/eventsjson".format(athlete_id=athlete_id)
     params = {"oldest": oldest_date, "newest": newest_date, "category": category}
@@ -211,7 +210,7 @@ def populate_description(description, first_a_event):
 def add_period_description(row, description):
     period = row['period'] if not pd.isna(row['period']) else ""
     if period:
-        description += f"- You are in the **{period}** period of your training plan.\n\n"
+        description += f"- You are in the **{handle_period_name(period)}** period of your training plan.\n\n"
         if period == "Rest":
             description += f"**{do_at_rest}**\n\n"
     return description
@@ -268,8 +267,18 @@ def add_next_race_description(index, df, week, description):
         if weeks_to_go == 1:
             description += f"- Upcoming race: **{next_race_name}**(a **{next_race_cat}**-event) next week on {next_race_day} {next_race_dayofmonth} {next_race_month}.\n\n "
         if weeks_to_go > 1:
-            description += f"- Upcoming race: **{next_race_name}** (a **{next_race_cat}**-event) within **{weeks_to_go}** weeks on {next_race_day} {next_race_dayofmonth} {next_race_month}.\n\n "    
+            description += f"- Upcoming race: **{next_race_name}** (a **{next_race_cat}**-event) within **{weeks_to_go}** weeks on {next_race_day} {next_race_dayofmonth} {next_race_month}.\n\n "
     return description
+
+def handle_period_name(period):
+    period = period.strip()
+    if period == "Trans":
+        return "Transition"
+    elif period == "Prep":
+        return "Preparation"
+    elif period and period[-1].isdigit() == False:
+        return period.strip()
+    return period
 
 def main():
     df = pd.read_excel(ATP_file_path, sheet_name=ATP_sheet_name)
