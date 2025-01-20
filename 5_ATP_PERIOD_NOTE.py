@@ -53,7 +53,7 @@ def get_note_color(period):
     return color_mapping.get(base_period, "black")  # Default to black if base period not found
 
 def delete_events(athlete_id, username, api_key, oldest_date, newest_date, category, name_prefix):
-    url_get = f"{url_base}/events".format(athlete_id=athlete_id)
+    url_get = f"{url_base}/eventsjson".format(athlete_id=athlete_id)
     params = {"oldest": oldest_date, "newest": newest_date, "category": category}
     response_get = requests.get(url_get, headers=API_headers, params=params, auth=HTTPBasicAuth(username, api_key))
     events = response_get.json() if response_get.status_code == 200 else []
@@ -69,6 +69,7 @@ def delete_events(athlete_id, username, api_key, oldest_date, newest_date, categ
         else:
             logging.error(f"Error deleting {category.lower()} event ID={event_id}: {response_del.status_code}")
 
+
 def create_note_event(start_date, end_date, description, period, athlete_id, username, api_key):
     url_base = f"https://intervals.icu/api/v1/athlete/{athlete_id}"
     url_post = f"{url_base}/events"
@@ -77,7 +78,11 @@ def create_note_event(start_date, end_date, description, period, athlete_id, use
     period_full = period
     if period == "Trans":
         period_full = "Transition"
+    elif period == "Trans ":
+            period_full = "Transition"
     elif period == "Prep":
+        period_full = "Preparation"
+    elif period == "Prep ":
         period_full = "Preparation"
     
     color = get_note_color(period)
@@ -129,7 +134,7 @@ def main():
     newest_date = df['start_date_local'].max().strftime("%Y-%m-%dT00:00:00")
     
     # Delete existing period notes
-    delete_events(athlete_id, username, api_key, oldest_date, newest_date, "NOTE", note_PERIOD_name)
+    delete_events(athlete_id, username, api_key, oldest_date, newest_date, "NOTE", "Training Period")
     
     for i in range(len(df)):
         start_date = df.at[i, 'start_date_local']
