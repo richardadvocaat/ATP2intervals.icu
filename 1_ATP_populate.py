@@ -17,6 +17,7 @@ Athlete_TLA = "TLA" #Three letter Acronym of athlete.
 ATP_sheet_name = "ATP_Data"
 ATP_file_path = rf"C:\TEMP\{Athlete_TLA}\Intervals_API_Tools_Office365_v1.6_ATP2intervals_{Athlete_TLA}.xlsm"
 parse_delay = .01
+change_whole_range = False  # Variable to control whether to change the whole range or only upcoming targets
 
 user_data = read_user_data(ATP_file_path)
 api_key = user_data.get('API_KEY', "yourapikey")
@@ -141,7 +142,11 @@ def main():
     oldest_date = df['start_date_local'].min().strftime("%Y-%m-%dT00:00:00")
     newest_date = df['start_date_local'].max().strftime("%Y-%m-%dT00:00:00")
 
-    delete_events(athlete_id, username, api_key, oldest_date, newest_date, "TARGET")
+    if change_whole_range:
+        delete_events(athlete_id, username, api_key, oldest_date, newest_date, "TARGET")
+    else:
+        upcoming_week = (datetime.now() + timedelta(weeks=1)).strftime("%Y-%m-%dT00:00:00")
+        delete_events(athlete_id, username, api_key, datetime.now().strftime("%Y-%m-%dT00:00:00"), upcoming_week, "TARGET")
 
     url_get = f"{url_base}/eventsjson".format(athlete_id=athlete_id)
     params = {"oldest": oldest_date, "newest": newest_date, "category": "TARGET,NOTE", "resolve": "false"}
@@ -150,6 +155,12 @@ def main():
 
     for index, row in df.iterrows():
         start_date = row['start_date_local'].strftime("%Y-%m-%dT00:00:00")
+        
+        if not change_whole_range:
+            if datetime.strptime(start_date, "%Y-%m-%dT00:00:00") <= datetime.now():
+                # Skip past dates
+                continue
+
         for col in df.columns:
             if col.endswith('_load_target'):
                 activity = format_activity_name(col.split('_load')[0])
@@ -172,4 +183,4 @@ def main():
             time_module.sleep(parse_delay)
 
 if __name__ == "__main__":
-    main()
+    main()c
