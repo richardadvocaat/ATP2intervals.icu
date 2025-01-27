@@ -30,6 +30,7 @@ athlete_id = user_data.get('ATHLETE_ID', "athleteid")
 unit_preference = user_data.get('DISTANCE_SYSTEM', "metric")
 note_ATP_color = user_data.get('NOTE_ATP_COLOR', "red")
 note_FEEDBACK_color = user_data.get('NOTE_FEEDBACK_COLOR', "blue")
+compliance_treshold = 0.15
 
 url_base = "https://intervals.icu/api/v1/athlete/{athlete_id}"
 url_profile = f"https://intervals.icu/api/v1/athlete/{athlete_id}/profile"
@@ -58,14 +59,6 @@ athlete_name = get_athlete_name(athlete_id, username, api_key)
 print(f"Athlete First Name: {athlete_name}")
 
 logging.info(f"Using athlete first name: {athlete_name} for further processing.")
-
-def distance_conversion_factor(unit_preference):
-    conversion_factors = {
-        "metric": 1000,
-        "imperial": 1609.344,
-        "Rijnlands": 3.186
-    }
-    return conversion_factors.get(unit_preference, 1000)
 
 def get_wellness_data(athlete_id, username, api_key, oldest_date, newest_date):
     url_wellness = f"https://intervals.icu/api/v1/athlete/{athlete_id}/wellness"
@@ -235,9 +228,9 @@ def add_load_check_description(row, previous_week_loads, previous_week_sheet_loa
         feedback = "There was nothing to do this week. :-)"
     elif delta_ctl == 0 or delta_atl == 0:
         feedback = "You were perfectly compliant to the ATP!"
-    elif delta_ctl > 0.2 * previous_week_sheet_load or delta_atl > 0.2 * previous_week_sheet_load:
+    elif delta_ctl > compliance_treshold * previous_week_sheet_load or delta_atl > compliance_treshold * previous_week_sheet_load:
         feedback = "You did too much. No problem, but be aware of overreaching."
-    elif delta_ctl < -0.2 * previous_week_sheet_load or delta_atl < -0.2 * previous_week_sheet_load:
+    elif delta_ctl < -compliance_treshold * previous_week_sheet_load or delta_atl < -compliance_treshold * previous_week_sheet_load:
         feedback = "You did too little. No problem, but don't make a habit of it."
 
     description += f"\n\nYour total trainingload for the last week was: **{ctl_load}**. Compared to the planned load: **{previous_week_sheet_load}**. Feedback: **{feedback}**"
