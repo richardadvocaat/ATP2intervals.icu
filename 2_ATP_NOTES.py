@@ -172,7 +172,8 @@ def create_update_or_delete_note_event(start_date, description, color, events, a
         "show_as_note": "false",
         "show_on_ctl_line": "false",
         "athlete_cannot_edit": "false",
-        "color": color
+        "color": color,
+        "for_week": "true"
     }
 
     logging.info(f"New event: Data={post_data}")
