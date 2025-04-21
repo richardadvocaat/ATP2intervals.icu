@@ -266,7 +266,7 @@ def add_next_race_description(index, df, week, description):
         next_race_cat = str(next_race.get('cat', '')).upper()
         weeks_to_go = next_race_week - week
         if weeks_to_go == 1:
-            description += f"- Upcoming race: **{next_race_name}**(a **{next_race_cat}**-event) next week on {next_race_day} {next_race_dayofmonth} {next_race_month}.\n\n "
+            description += f"- Upcoming race: **{next_race_name}** (a **{next_race_cat}**-event) next week on {next_race_day} {next_race_dayofmonth} {next_race_month}.\n\n "
         if weeks_to_go > 1:
             description += f"- Upcoming race: **{next_race_name}** (a **{next_race_cat}**-event) within **{weeks_to_go}** weeks on {next_race_day} {next_race_dayofmonth} {next_race_month}.\n\n "
     return description
