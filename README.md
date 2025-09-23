@@ -16,7 +16,7 @@ Find more information about ATP on the [intervals.icu forum](https://forum.inter
 
 **The third script ([3_ATP_PERIOD_NOTE.py](https://github.com/richardadvocaat/ATP2intervals.icu/blob/main/3_ATP_PERIOD_NOTE.py))** makes a note along the whole period (build, transition, race etc.) in intervals.icu. Sot the fitness-chart is easier tot read and the different periods are easy to recognise.
 
-**The fourth script ([4_LOAD_CHECK.py](https://github.com/richardadvocaat/ATP2intervals.icu/blob/LOAD_CHECK/4_LOAD_CHECK.py))** compares the planned target loads in intervals.icu with the planned loads in the ATP and updates accordingly.There is a problem with writing this data directly to ATP2intervals_TLA.xlsm, so a second excelfile is needed ATP_LOAD. Keep it closed while trunning the script and open it tot fill the collumns in ATP2intervals_TLA.xlsm for comparison.
+**The fourth script ([4_LOAD_CHECK.py](https://github.com/richardadvocaat/ATP2intervals.icu/blob/LOAD_CHECK/4_LOAD_CHECK.py))** compares the planned target loads in intervals.icu with the planned loads in the ATP and updates accordingly.
 
 **The fifth script ([5_ATP_LOAD_feedback.py](https://github.com/richardadvocaat/ATP2intervals.icu/blob/main/5_ATP_LOAD_feedback.py))** checks if the athlete was compliant to the plan based on the reported load, time, and distance in intervals.icu. This script can be used to automate the prces of check if the athlete was compliant. Not that usefull for a truely commited coach or triner, because normaly this is not something that can be automated. ;-)
 
@@ -47,8 +47,8 @@ Find more information about ATP on the [intervals.icu forum](https://forum.inter
 
 1. **Setup**: Ensure you have the required Python libraries installed (`logging`, `os`, `pandas`, `requests`).
 2. **Configuration**: Update the user variables at the top of the script with your Excel file path, sheet name.
-3. **Excel Sheets**: Place the `ATP2intervals_TLA_YYYY.xlsm` and ATP_LOAD.xls in `C:\TEMP\TLA`. (TLA = e.g. RAA, so rename the sheet to ATP2intervals_RAA_2025.xlsm).
+3. **Excel Sheets**: Place the `ATP2intervals_TLA_YYYY.xlsm` in `C:\TEMP\TLA`. (TLA = e.g. RAA and YYYY = 2026, so rename the sheet to ATP2intervals_RAA_2026.xlsm).
 4. **User_Data**: In the tab User_Data you can put the athlete ID, API key, preferred unit system (metric or imperial) and some basic preferences like the color of the note.
-5. **Set up ATP**: Fill in the race calendar and some basis stuff like start and end of the ATP-period, yearly TSS. Fill in the ATP period per week (e.g. BASE 1-1) and the recommended load is listed in the next collumn. Then you can distribute the load to different sport types like RUN and BIKE. In the sheet there is a check if the total of different weekely loads are equal to the recommended load.
+5. **Set up ATP**: Fill in the race calendar and some basic stuff like start and end of the ATP-period, yearly TSS. Fill in the ATP period per week (e.g. BASE 1-1) and the recommended load is listed in the next collumn. Then you can distribute the load to different sport types like RUN and BIKE. In the sheet there is a check if the total of different weekely loads are equal to the recommended load.
 7. **Run**: Execute the scripts in the right order to sync your training plan with intervals.icu.
 8. **Check**: After running the first scripts the target_loads are placed in intervals.icu. 4_LOAD_CHECK.py rerieves the actual planned load from the trainingplans. So you can easily check if plans in intervals.icu are compliant with the ATP. 
