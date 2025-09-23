@@ -206,6 +206,7 @@ def populate_description(description, first_a_event):
         description = f"- This (part) of the plan aims for **{first_a_event}**.\n\n" + description
 
     description = f"Hi **{athlete_name}**, here is your weekly ATP summary:\n\n" + description
+    description += "\n---\n*made with the 2_ATP_NOTES.py script*"
     return description
 
 def add_period_description(row, description):
