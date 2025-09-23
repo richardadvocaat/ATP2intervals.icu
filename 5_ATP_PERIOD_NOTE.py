@@ -119,6 +119,7 @@ def create_description(period, start_date, end_date, first_a_event):
     period = handle_period_name(period)
     description = f"You are in the **{period}-period** (from {start_date.strftime('%d-%m-%Y')} to {end_date.strftime('%d-%m-%Y')})"
     description = populate_race_description(description, first_a_event)
+    description += "\n---\n*made with the 5_ATP_PERIOD_NOTE.py script*"
     return description
 
 def main():
