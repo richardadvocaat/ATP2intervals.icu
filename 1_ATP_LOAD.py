@@ -13,9 +13,10 @@ def read_user_data(ATP_file_path, sheet_name="User_Data"):
     user_data = df.set_index('Key').to_dict()['Value']
     return user_data
 
-Athlete_TLA = "TLA" #Three letter Acronym of athlete.
+Athlete_TLA = "RAA" #Three letter Acronym of athlete.
+ATP_year = "2025"
 ATP_sheet_name = "ATP_Data"
-ATP_file_path = rf"C:\TEMP\{Athlete_TLA}\ATP2intervals_{Athlete_TLA}.xlsm"
+ATP_file_path = rf"C:\TEMP\{Athlete_TLA}\ATP2intervals_{Athlete_TLA}_{ATP_year}.xlsm"
 parse_delay = .01
 change_whole_range = False  # Variable to control whether to change the whole range or only upcoming targets
 
@@ -184,4 +185,5 @@ def main():
 
 if __name__ == "__main__":
     main()c
+
 
