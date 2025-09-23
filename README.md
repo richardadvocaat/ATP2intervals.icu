@@ -47,7 +47,7 @@ Find more information about ATP on the [intervals.icu forum](https://forum.inter
 
 1. **Setup**: Ensure you have the required Python libraries installed (`logging`, `os`, `pandas`, `requests`).
 2. **Configuration**: Update the user variables at the top of the script with your Excel file path, sheet name.
-3. **Excel Sheets**: Place the `ATP2intervals_TLA_YYYY.xlsm` and ATP_LOAD.xls in `C:\TEMP\TLA`. (TLA = e.g. RAA, so rename the sheet to ATP2intervals_RAA.xlsm).
+3. **Excel Sheets**: Place the `ATP2intervals_TLA_YYYY.xlsm` and ATP_LOAD.xls in `C:\TEMP\TLA`. (TLA = e.g. RAA, so rename the sheet to ATP2intervals_RAA_2025.xlsm).
 4. **User_Data**: In the tab User_Data you can put the athlete ID, API key, preferred unit system (metric or imperial) and some basic preferences like the color of the note.
 5. **Set up ATP**: Fill in the race calendar and some basis stuff like start and end of the ATP-period, yearly TSS. Fill in the ATP period per week (e.g. BASE 1-1) and the recommended load is listed in the next collumn. Then you can distribute the load to different sport types like RUN and BIKE. In the sheet there is a check if the total of different weekely loads are equal to the recommended load.
 7. **Run**: Execute the scripts in the right order to sync your training plan with intervals.icu.
