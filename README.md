@@ -9,7 +9,7 @@ The idea is that it must be an easy job to populate intervals.icu with the coach
 
 **scripts**
  
-**The first Python script ([1_ATP_LOAD.py](https://github.com/richardadvocaat/ATP2intervals.icu/blob/main/1_ATP_LOAD.py))** automates the process of sending an annual training plan (ATP) with the coach's made ATP to intervals.icu so it wil make weekly targets for TSS (load), time, ore distance.
+**The first Python script ([1_ATP_LOAD.py](https://github.com/richardadvocaat/ATP2intervals.icu/blob/main/1_ATP_LOAD.py))** automates the process of sending an annual training plan (ATP) with the coach's made ATP to intervals.icu so it wil make weekly targets for TSS (load), time, or distance.
 Find more information about ATP on the [intervals.icu forum](https://forum.intervals.icu/t/apps-in-excel-a-guide-to-getting-started/20844).
 
 **The second script ([2_ATP_NOTES.py](https://github.com/richardadvocaat/ATP2intervals.icu/blob/main/2_ATP_NOTES.py))** makes notes with multiple comments for your athlete to intervals.icu. It will give information about the main goal, upcoming evnts and items to focus on. It reads data from the ATP and sends notes to intervals.icu.
