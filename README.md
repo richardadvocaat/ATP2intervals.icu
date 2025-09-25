@@ -45,7 +45,7 @@ Find more information about ATP on the [intervals.icu forum](https://forum.inter
 
 ## Usage
 
-1. **Setup**: Ensure you have the required Python libraries installed (`logging`, `os`, `pandas`, `requests`).
+1. **Setup**: Ensure you have the required Python libraries installed (`logging`, `os`, `pandas`, `requests`, `openpyxl`).
 2. **Configuration**: Update the user variables at the top of the script with your Excel file path, sheet name.
 3. **Excel Sheets**: Place the `ATP2intervals_TLA_YYYY.xlsm` in `C:\TEMP\TLA`. (TLA = e.g. RAA and YYYY = 2026, so rename the sheet to ATP2intervals_RAA_2026.xlsm).
 4. **User_Data**: In the tab User_Data you can put the athlete ID, API key, preferred unit system (metric or imperial) and some basic preferences like the color of the note.
