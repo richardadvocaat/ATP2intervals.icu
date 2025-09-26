@@ -4,8 +4,7 @@ import requests
 from requests.auth import HTTPBasicAuth
 import time as time_module
 from datetime import datetime, timedelta
-
-#logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(level)s - %(message)s')
+from io import StringIO
 
 def format_activity_name(activity):
     return ''.join(word.capitalize() for word in activity.split('_'))
@@ -15,7 +14,6 @@ def read_user_data(ATP_file_path, sheet_name="User_Data"):
     user_data = df.set_index('Key').to_dict()['Value']
     return user_data
 
-# Configure logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
 Athlete_TLA = "RAA"
@@ -36,17 +34,12 @@ url_profile = f"https://intervals.icu/api/v1/athlete/{athlete_id}/profile"
 url_activities = f"https://intervals.icu/api/v1/athlete/{athlete_id}/activities"
 API_headers = {"Content-Type": "application/json"}
 
-# Date range for the current year
-oldest_date = "2025-01-01T00:00:00"
-newest_date = "2025-12-31T23:59:59"
+oldest_date = f"{ATP_year}-01-01T00:00:00"
+newest_date = f"{ATP_year}-12-31T23:59:59"
 
 def get_race_events(athlete_id, username, api_key, race_categories, oldest_date, newest_date):
-    """
-    Fetches all events for the given race categories (e.g., RACE_A, RACE_B, RACE_C).
-    """
-    url_get = f"{url_base}/events"  # Endpoint for fetching events in CSV format
+    url_get = f"{url_base}/events"
     events_list = []
-    
     for category in race_categories:
         params = {
             "oldest": oldest_date,
@@ -54,41 +47,53 @@ def get_race_events(athlete_id, username, api_key, race_categories, oldest_date,
             "category": category
         }
         response = requests.get(url_get, headers=API_headers, params=params, auth=HTTPBasicAuth(username, api_key))
-        
         if response.status_code == 200:
-            events = response.text  # Get raw CSV as string
+            events = response.text
             logging.info(f"Fetched events for category {category}")
             events_list.append((category, events))
         else:
             logging.error(f"Error fetching events for category {category}: {response.status_code}")
-    
     return events_list
 
-from io import StringIO
+def structurize_csv_events(csv_string):
+    """
+    Parses CSV string into a pandas DataFrame, ensuring each event is a row.
+    """
+    # Check if the CSV string has multiple lines and commas
+    lines = csv_string.strip().splitlines()
+    if len(lines) > 1 and "," in lines[0]:
+        # Likely standard CSV, use pandas
+        df = pd.read_csv(StringIO(csv_string))
+    else:
+        # If not standard, try to parse manually (fallback)
+        rows = [line.split(",") for line in lines if line]
+        df = pd.DataFrame(rows[1:], columns=rows[0]) if rows else pd.DataFrame()
+    return df
 
 def save_events_to_excel(race_events, output_file):
     """
     Save the fetched race events to an Excel file.
+    Each event will be its own row.
     """
     with pd.ExcelWriter(output_file, engine='xlsxwriter') as writer:
         for category, events in race_events:
-            # Convert the CSV string to a DataFrame
             try:
-                df = pd.read_csv(StringIO(events))
-                # Write the DataFrame to a sheet named after the category
-                df.to_excel(writer, sheet_name=category, index=False)
+                df = structurize_csv_events(events)
+                # Only save if df is not empty
+                if not df.empty:
+                    # Optionally, sort by id if present
+                    if "id" in df.columns:
+                        df = df.sort_values(by="id")
+                    df.to_excel(writer, sheet_name=category, index=False)
+                else:
+                    logging.warning(f"No events to save for category {category}")
             except Exception as e:
                 logging.error(f"Error processing events for category {category}: {e}")
     logging.info(f"Race events have been saved to {output_file}")
 
 def main():
-    # Define the race categories to fetch
     race_categories = ["RACE_A", "RACE_B", "RACE_C"]
-    
-    # Fetch the race events
     race_events = get_race_events(athlete_id, username, api_key, race_categories, oldest_date, newest_date)
-    
-    # Save the events to an Excel file
     if race_events:
         output_file = RACE_file_path
         save_events_to_excel(race_events, output_file)
