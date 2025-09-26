@@ -39,7 +39,7 @@ oldest_date = f"{ATP_year}-01-01T00:00:00"
 newest_date = f"{ATP_year}-12-31T23:59:59"
 
 def get_race_events(athlete_id, username, api_key, race_categories, oldest_date, newest_date):
-    url_get = f"{url_base}/events"
+    url_get = f"https://intervals.icu/api/v1/athlete/{athlete_id}/events"
     events_list = []
     for category in race_categories:
         params = {
@@ -49,53 +49,36 @@ def get_race_events(athlete_id, username, api_key, race_categories, oldest_date,
         }
         response = requests.get(url_get, headers=API_headers, params=params, auth=HTTPBasicAuth(username, api_key))
         if response.status_code == 200:
-            events = response.text
-            logging.info(f"Fetched events for category {category}")
-            events_list.append((category, events))
+            try:
+                events = response.json()  # parse as JSON
+                logging.info(f"Fetched events for category {category}")
+                events_list.append((category, events))
+            except Exception as e:
+                logging.error(f"Error parsing JSON for category {category}: {e}")
         else:
-            logging.error(f"Error fetching events for category {category}: {response.status_code}")
+            logging.error(f"Error fetching events for category {category}: {response.status_code}. {response.text}")
     return events_list
 
-def structurize_csv_events(csv_string):
-    """
-    Parses CSV string into a pandas DataFrame, ensuring each event is a row.
-    """
-    # Check if the CSV string has multiple lines and commas
-    lines = csv_string.strip().splitlines()
-    if len(lines) > 1 and "," in lines[0]:
-        # Likely standard CSV, use pandas
-        df = pd.read_csv(StringIO(csv_string))
-    else:
-        # If not standard, try to parse manually (fallback)
-        rows = [line.split(",") for line in lines if line]
-        df = pd.DataFrame(rows[1:], columns=rows[0]) if rows else pd.DataFrame()
-    return df
+def structurize_events_json(events_json):
+    return pd.DataFrame(events_json) if events_json else pd.DataFrame()
 
 def save_events_to_excel(race_events, output_file):
-    """
-    Save the fetched race events to an Excel file using xlwings.
-    Each event will be its own sheet.
-    """
     app = xw.App(visible=False)
     try:
-        # Create a new workbook or open if exists
-        wb = xw.Book()  # Creates a new workbook
+        wb = xw.Book()
         for category, events in race_events:
             try:
-                df = structurize_csv_events(events)
+                df = structurize_events_json(events)
                 if not df.empty:
-                    # Remove sheet if already exists (xlwings auto adds Sheet1)
                     if category in [s.name for s in wb.sheets]:
                         wb.sheets[category].delete()
                     sht = wb.sheets.add(category)
                     sht.range("A1").value = df.columns.tolist()
-                    if not df.empty:
-                        sht.range("A2").value = df.values.tolist()
+                    sht.range("A2").value = df.values.tolist()
                 else:
                     logging.warning(f"No events to save for category {category}")
             except Exception as e:
                 logging.error(f"Error processing events for category {category}: {e}")
-        # Remove the default Sheet1 if unused
         if "Sheet1" in [s.name for s in wb.sheets] and len(wb.sheets) > len(race_events):
             wb.sheets["Sheet1"].delete()
         wb.save(output_file)
@@ -103,6 +86,7 @@ def save_events_to_excel(race_events, output_file):
     finally:
         wb.close()
         app.quit()
+
 
 def main():
     race_categories = ["RACE_A", "RACE_B", "RACE_C"]
