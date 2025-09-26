@@ -5,6 +5,7 @@ from requests.auth import HTTPBasicAuth
 import time as time_module
 from datetime import datetime, timedelta
 from io import StringIO
+import xlwings as xw  # Added xlwings import
 
 def format_activity_name(activity):
     return ''.join(word.capitalize() for word in activity.split('_'))
@@ -72,24 +73,36 @@ def structurize_csv_events(csv_string):
 
 def save_events_to_excel(race_events, output_file):
     """
-    Save the fetched race events to an Excel file.
-    Each event will be its own row.
+    Save the fetched race events to an Excel file using xlwings.
+    Each event will be its own sheet.
     """
-    with pd.ExcelWriter(output_file, engine='xlsxwriter') as writer:
+    app = xw.App(visible=False)
+    try:
+        # Create a new workbook or open if exists
+        wb = xw.Book()  # Creates a new workbook
         for category, events in race_events:
             try:
                 df = structurize_csv_events(events)
-                # Only save if df is not empty
                 if not df.empty:
-                    # Optionally, sort by id if present
-                    if "id" in df.columns:
-                        df = df.sort_values(by="id")
-                    df.to_excel(writer, sheet_name=category, index=False)
+                    # Remove sheet if already exists (xlwings auto adds Sheet1)
+                    if category in [s.name for s in wb.sheets]:
+                        wb.sheets[category].delete()
+                    sht = wb.sheets.add(category)
+                    sht.range("A1").value = df.columns.tolist()
+                    if not df.empty:
+                        sht.range("A2").value = df.values.tolist()
                 else:
                     logging.warning(f"No events to save for category {category}")
             except Exception as e:
                 logging.error(f"Error processing events for category {category}: {e}")
-    logging.info(f"Race events have been saved to {output_file}")
+        # Remove the default Sheet1 if unused
+        if "Sheet1" in [s.name for s in wb.sheets] and len(wb.sheets) > len(race_events):
+            wb.sheets["Sheet1"].delete()
+        wb.save(output_file)
+        logging.info(f"Race events have been saved to {output_file}")
+    finally:
+        wb.close()
+        app.quit()
 
 def main():
     race_categories = ["RACE_A", "RACE_B", "RACE_C"]
