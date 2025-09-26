@@ -1,0 +1,98 @@
+import logging
+import pandas as pd
+import requests
+from requests.auth import HTTPBasicAuth
+import time as time_module
+from datetime import datetime, timedelta
+
+#logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(level)s - %(message)s')
+
+def format_activity_name(activity):
+    return ''.join(word.capitalize() for word in activity.split('_'))
+
+def read_user_data(ATP_file_path, sheet_name="User_Data"):
+    df = pd.read_excel(ATP_file_path, sheet_name=sheet_name)
+    user_data = df.set_index('Key').to_dict()['Value']
+    return user_data
+
+# Configure logging
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+
+Athlete_TLA = "RAA"
+ATP_year = "2026"
+ATP_sheet_name = "ATP_Data"
+ATP_file_path = rf"C:\TEMP\{Athlete_TLA}\ATP2intervals_{Athlete_TLA}_{ATP_year}.xlsm"
+RACE_file_path = rf"C:\TEMP\{Athlete_TLA}\race_events.xlsx"
+
+parse_delay = .01
+
+user_data = read_user_data(ATP_file_path)
+api_key = user_data.get('API_KEY', "yourapikey")
+username = user_data.get('USERNAME', "API_KEY")
+athlete_id = user_data.get('ATHLETE_ID', "athleteid")
+
+url_base = f"https://intervals.icu/api/v1/athlete/{athlete_id}"
+url_profile = f"https://intervals.icu/api/v1/athlete/{athlete_id}/profile"
+url_activities = f"https://intervals.icu/api/v1/athlete/{athlete_id}/activities"
+API_headers = {"Content-Type": "application/json"}
+
+# Date range for the current year
+oldest_date = "2025-01-01T00:00:00"
+newest_date = "2025-12-31T23:59:59"
+
+def get_race_events(athlete_id, username, api_key, race_categories, oldest_date, newest_date):
+    """
+    Fetches all events for the given race categories (e.g., RACE_A, RACE_B, RACE_C).
+    """
+    url_get = f"{url_base}/events"  # Endpoint for fetching events in CSV format
+    events_list = []
+    
+    for category in race_categories:
+        params = {
+            "oldest": oldest_date,
+            "newest": newest_date,
+            "category": category
+        }
+        response = requests.get(url_get, headers=API_headers, params=params, auth=HTTPBasicAuth(username, api_key))
+        
+        if response.status_code == 200:
+            events = response.text  # Get raw CSV as string
+            logging.info(f"Fetched events for category {category}")
+            events_list.append((category, events))
+        else:
+            logging.error(f"Error fetching events for category {category}: {response.status_code}")
+    
+    return events_list
+
+def save_events_to_excel(race_events, output_file):
+    """
+    Save the fetched race events to an Excel file.
+    """
+    with pd.ExcelWriter(output_file, engine='xlsxwriter') as writer:
+        for category, events in race_events:
+            # Convert the CSV string to a DataFrame
+            try:
+                df = pd.read_csv(pd.compat.StringIO(events))
+                # Write the DataFrame to a sheet named after the category
+                df.to_excel(writer, sheet_name=category, index=False)
+            except Exception as e:
+                logging.error(f"Error processing events for category {category}: {e}")
+    logging.info(f"Race events have been saved to {output_file}")
+
+def main():
+    # Define the race categories to fetch
+    race_categories = ["RACE_A", "RACE_B", "RACE_C"]
+    
+    # Fetch the race events
+    race_events = get_race_events(athlete_id, username, api_key, race_categories, oldest_date, newest_date)
+    
+    # Save the events to an Excel file
+    if race_events:
+        output_file = RACE_file_path
+        save_events_to_excel(race_events, output_file)
+        print(f"Race events have been saved to {output_file}")
+    else:
+        print("No RACE events found.")
+
+if __name__ == "__main__":
+    main()
