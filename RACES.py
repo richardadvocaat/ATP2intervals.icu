@@ -64,6 +64,8 @@ def get_race_events(athlete_id, username, api_key, race_categories, oldest_date,
     
     return events_list
 
+from io import StringIO
+
 def save_events_to_excel(race_events, output_file):
     """
     Save the fetched race events to an Excel file.
@@ -72,7 +74,7 @@ def save_events_to_excel(race_events, output_file):
         for category, events in race_events:
             # Convert the CSV string to a DataFrame
             try:
-                df = pd.read_csv(pd.compat.StringIO(events))
+                df = pd.read_csv(StringIO(events))
                 # Write the DataFrame to a sheet named after the category
                 df.to_excel(writer, sheet_name=category, index=False)
             except Exception as e:
