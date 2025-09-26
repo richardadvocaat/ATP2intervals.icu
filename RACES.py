@@ -18,10 +18,10 @@ def read_user_data(ATP_file_path, sheet_name="User_Data"):
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
 Athlete_TLA = "RAA"
-ATP_year = "2026"
+ATP_year = "2025"
 ATP_sheet_name = "ATP_Data"
 ATP_file_path = rf"C:\TEMP\{Athlete_TLA}\ATP2intervals_{Athlete_TLA}_{ATP_year}.xlsm"
-RACE_file_path = rf"C:\TEMP\{Athlete_TLA}\race_events.xlsx"
+RACE_file_path = rf"C:\TEMP\{Athlete_TLA}\{Athlete_TLA}_race_events_{ATP_year}.xlsx"
 
 parse_delay = .01
 
@@ -39,7 +39,7 @@ oldest_date = f"{ATP_year}-01-01T00:00:00"
 newest_date = f"{ATP_year}-12-31T23:59:59"
 
 def get_race_events(athlete_id, username, api_key, race_categories, oldest_date, newest_date):
-    url_get = f"https://intervals.icu/api/v1/athlete/{athlete_id}/events"
+    url_get = f"https://intervals.icu/api/v1/athlete/{athlete_id}/eventsjson"
     events_list = []
     for category in race_categories:
         params = {
@@ -47,11 +47,13 @@ def get_race_events(athlete_id, username, api_key, race_categories, oldest_date,
             "newest": newest_date,
             "category": category
         }
+        logging.info(f"Requesting {url_get} with params: {params}")
         response = requests.get(url_get, headers=API_headers, params=params, auth=HTTPBasicAuth(username, api_key))
+        logging.info(f"Response Status: {response.status_code}, Body: {response.text[:500]}")
         if response.status_code == 200:
             try:
                 events = response.json()  # parse as JSON
-                logging.info(f"Fetched events for category {category}")
+                logging.info(f"Fetched events for category {category}: {len(events)} events")
                 events_list.append((category, events))
             except Exception as e:
                 logging.error(f"Error parsing JSON for category {category}: {e}")
@@ -60,7 +62,22 @@ def get_race_events(athlete_id, username, api_key, race_categories, oldest_date,
     return events_list
 
 def structurize_events_json(events_json):
-    return pd.DataFrame(events_json) if events_json else pd.DataFrame()
+    if not events_json:
+        return pd.DataFrame()
+    df = pd.DataFrame(events_json)
+    # Select and rename required columns
+    cols_map = {
+        "type": "racetype",
+        "category": "racecategory",
+        "end_date_local": "date",
+        "name": "racename"
+    }
+    df = df[list(cols_map.keys())].rename(columns=cols_map)
+    # Convert date to DD-MM-YYYY format
+    df["date"] = pd.to_datetime(df["date"]).dt.strftime("%d-%m-%Y")
+    # Reorder columns as requested
+    df = df[["date", "racename", "racetype", "racecategory"]]
+    return df
 
 def save_events_to_excel(race_events, output_file):
     app = xw.App(visible=False)
