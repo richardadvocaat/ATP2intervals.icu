@@ -10,8 +10,8 @@ def read_user_data(ATP_file_path, sheet_name="User_Data"):
     user_data = df.set_index('Key').to_dict()['Value']
     return user_data
 
-Athlete_TLA = "RAA" #Three letter Acronym of athlete.
-ATP_year = "2026"
+Athlete_TLA = "TLA" #Three letter Acronym of athlete.
+ATP_year = "2025"
 ATP_sheet_name = "ATP_Data"
 ATP_file_path = rf"C:\TEMP\{Athlete_TLA}\ATP2intervals_{Athlete_TLA}_{ATP_year}.xlsm"
 parse_delay = .00
@@ -65,6 +65,7 @@ def get_existing_events(athlete_id, oldest_date, newest_date, username, api_key)
 
 def get_desired_events(df):
     desired = {}
+    dist_factor = distance_conversion_factor(unit_preference)
     for idx, row in df.iterrows():
         start_date = row['start_date_local'].strftime("%Y-%m-%dT00:00:00")
         for col in df.columns:
@@ -73,8 +74,15 @@ def get_desired_events(df):
                 load = int(row[col])
                 time_col = f"{col.split('_load')[0]}_time"
                 dist_col = f"{col.split('_load')[0]}_distance"
-                time = int(row[time_col]) if time_col in row else 0
-                distance = int(row[dist_col]) if dist_col in row else 0
+                time = int(row[time_col]) * 60 if time_col in row else 0  # Convert seconds to minutes
+                # Only convert distance for non-swimming activities
+                if dist_col in row:
+                    if activity.lower() in ['swim', 'openwaterswim']:
+                        distance = int(row[dist_col])  # Swimming stays meters
+                    else:
+                        distance = int(row[dist_col]) * dist_factor  # Convert for non-swimming
+                else:
+                    distance = 0
                 key = (start_date, activity)
                 desired[key] = {
                     'start_date_local': start_date,
