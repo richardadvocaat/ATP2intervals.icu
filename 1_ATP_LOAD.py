@@ -6,7 +6,7 @@ import time as time_module
 from datetime import datetime, timedelta
 
 Athlete_TLA = "TLA" #Three letter Acronym of athlete.
-ATP_year = "2026"
+ATP_year = "YYYY"
 ATP_sheet_name = "ATP_Data"
 ATP_sheet_Conditions = "ATP_Conditions"
 ATP_file_path = rf"C:\TEMP\{Athlete_TLA}\ATP2intervals_{Athlete_TLA}_{ATP_year}.xlsm"
