@@ -11,6 +11,25 @@ def read_user_data(ATP_file_path, sheet_name="User_Data"):
     user_data = df.set_index('Key').to_dict()['Value']
     return user_data
 
+def parse_atp_date(date_str):
+    for fmt in ("%d-%m-%Y", "%Y-%m-%d %H:%M:%S", "%Y-%m-%d"):
+        try:
+            return datetime.strptime(str(date_str), fmt)
+        except ValueError:
+            continue
+    raise ValueError(f"Date '{date_str}' is not in a recognized format.")
+
+def read_ATP_period(ATP_file_path, sheet_name="ATP_Conditions"):
+    df_cond = pd.read_excel(ATP_file_path, sheet_name=sheet_name, usecols="B:C")
+    cond_dict = dict(zip(df_cond.iloc[:, 0], df_cond.iloc[:, 1]))
+    start_str = cond_dict.get("Start_ATP")
+    end_str = cond_dict.get("End_ATP")
+    start_date = parse_atp_date(start_str)
+    end_date = parse_atp_date(end_str)
+    oldest_date = start_date.strftime("%Y-%m-%dT00:00:00")
+    newest_date = end_date.strftime("%Y-%m-%dT00:00:00")
+    return oldest_date, newest_date
+
 Athlete_TLA = "TLA" #Three letter Acronym of athlete.
 ATP_year = "YYYY" #year of the ATP
 ATP_sheet_name = "ATP_Data"
@@ -18,6 +37,7 @@ ATP_file_path = rf"C:\TEMP\{Athlete_TLA}\ATP2intervals_{Athlete_TLA}_{ATP_year}.
 
 parse_delay = .01
 note_PERIOD_name = 'Period:'
+NOTES_underline = "\n---\n*made with the 3_ATP_PERIOD_NOTE.py script*"
 
 user_data = read_user_data(ATP_file_path)
 api_key = user_data.get('API_KEY', "yourapikey")
@@ -40,7 +60,7 @@ def get_period_end_date(df, start_index):
     return get_last_day_of_week(df.at[len(df)-1, 'start_date_local'])
 
 def get_note_color(period):
-    base_period = period.split()[0]  # Get the base period name (e.g., "Base" from "Base 1")
+    base_period = period.split()[0]
     color_mapping = {
         "Base": "yellow",
         "Peak": "orange",
@@ -51,7 +71,7 @@ def get_note_color(period):
         "Rest": "cyan",
         "Build": "blue"
     }
-    return color_mapping.get(base_period, "black")  # Default to black if base period not found
+    return color_mapping.get(base_period, "black")
 
 def delete_events(athlete_id, username, api_key, oldest_date, newest_date, category, name_prefix):
     url_get = f"{url_base}/eventsjson".format(athlete_id=athlete_id)
@@ -120,7 +140,7 @@ def create_description(period, start_date, end_date, first_a_event):
     period = handle_period_name(period)
     description = f"You are in the **{period}-period** (from {start_date.strftime('%d-%m-%Y')} to {end_date.strftime('%d-%m-%Y')})"
     description = populate_race_description(description, first_a_event)
-    description += "\n---\n*made with the 5_ATP_PERIOD_NOTE.py script*"
+    description += NOTES_underline
     return description
 
 def main():
@@ -131,6 +151,12 @@ def main():
     df['period'] = df['period'].astype(str)
     df['start_date_local'] = df['start_date_local'].astype('datetime64[ns]')
     df.fillna('', inplace=True)
+
+    # Strictly limit data to ATP period
+    oldest_date, newest_date = read_ATP_period(ATP_file_path)
+    oldest = pd.to_datetime(oldest_date)
+    newest = pd.to_datetime(newest_date)
+    df = df[(df['start_date_local'] >= oldest) & (df['start_date_local'] <= newest)]
 
     # Define date range for deleting events
     oldest_date = df['start_date_local'].min().strftime("%Y-%m-%dT00:00:00")
