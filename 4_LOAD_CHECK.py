@@ -1,4 +1,4 @@
-from ATP_common_config.py import *
+from ATP_common_config import *
 # Now you have access to all the variables and functions defined above.
 
 def get_events(athlete_id, username, api_key, oldest_date, newest_date, category):
