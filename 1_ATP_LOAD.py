@@ -198,10 +198,18 @@ def main():
     df.fillna(0, inplace=True)
     df['start_date_local'] = pd.to_datetime(df['start_date_local'], errors='coerce')
     df = df.dropna(subset=['start_date_local'])
+
+    # Strictly limit data to ATP period
+    oldest_date, newest_date = read_ATP_period(ATP_file_path)
+    oldest = pd.to_datetime(oldest_date)
+    newest = pd.to_datetime(newest_date)
+    df = df[(df['start_date_local'] >= oldest) & (df['start_date_local'] <= newest)]
+
     if not overwrite_past:
         # Only keep events with start_date_local in the future (relative to now)
         now = datetime.now()
         df = df[df['start_date_local'] >= now]
+
     efficient_event_sync(df, athlete_id, username, api_key)
 
 if __name__ == "__main__":
