@@ -8,7 +8,9 @@ The idea is that it must be an easy job to populate intervals.icu with the coach
 ## What's in it
 
 **scripts**
- 
+
+ **The base Python script ([ATP_common_config.py](https://github.com/richardadvocaat/ATP2intervals.icu/blob/simplify-scripts-(use-one-main-part-that-is-used-everywhere)/ATP_common_config.py))** This is the "script" with al (user)variables. To use one common script that is used for input of the others makes updating and managing the scripts easier.
+
 **The first Python script ([1_ATP_LOAD.py](https://github.com/richardadvocaat/ATP2intervals.icu/blob/main/1_ATP_LOAD.py))** automates the process of sending an annual training plan (ATP) with the coach's made ATP to intervals.icu so it wil make weekly targets for TSS (load), time, or distance.
 Find more information about ATP on the [intervals.icu forum](https://forum.intervals.icu/t/apps-in-excel-a-guide-to-getting-started/20844).
 
