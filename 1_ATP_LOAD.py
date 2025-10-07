@@ -5,17 +5,43 @@ from requests.auth import HTTPBasicAuth
 import time as time_module
 from datetime import datetime, timedelta
 
+Athlete_TLA = "TLA" #Three letter Acronym of athlete.
+ATP_year = "YYYY"
+ATP_sheet_name = "ATP_Data"
+ATP_sheet_Conditions = "ATP_Conditions"
+ATP_file_path = rf"C:\TEMP\{Athlete_TLA}\ATP2intervals_{Athlete_TLA}_{ATP_year}.xlsm"
+parse_delay = .00
+change_whole_range = True  # Variable to control whether to change the whole range or only upcoming targets
+
 def read_user_data(ATP_file_path, sheet_name="User_Data"):
     df = pd.read_excel(ATP_file_path, sheet_name=sheet_name)
     user_data = df.set_index('Key').to_dict()['Value']
     return user_data
 
-Athlete_TLA = "TLA" #Three letter Acronym of athlete.
-ATP_year = "2025"
-ATP_sheet_name = "ATP_Data"
-ATP_file_path = rf"C:\TEMP\{Athlete_TLA}\ATP2intervals_{Athlete_TLA}_{ATP_year}.xlsm"
-parse_delay = .00
-change_whole_range = True  # Variable to control whether to change the whole range or only upcoming targets
+def parse_atp_date(date_str):
+    # Try common formats
+    for fmt in ("%d-%m-%Y", "%Y-%m-%d %H:%M:%S", "%Y-%m-%d"):
+        try:
+            return datetime.strptime(str(date_str), fmt)
+        except ValueError:
+            continue
+    raise ValueError(f"Date '{date_str}' is not in a recognized format.")
+
+def read_ATP_period(ATP_file_path, sheet_name=ATP_sheet_Conditions):
+    df_cond = pd.read_excel(ATP_file_path, sheet_name=sheet_name, usecols="B:C")
+    cond_dict = dict(zip(df_cond.iloc[:, 0], df_cond.iloc[:, 1]))
+    start_str = cond_dict.get("Start_ATP")
+    end_str = cond_dict.get("End_ATP")
+    start_date = parse_atp_date(start_str)
+    end_date = parse_atp_date(end_str)
+    oldest_date = start_date.strftime("%Y-%m-%dT00:00:00")
+    newest_date = end_date.strftime("%Y-%m-%dT00:00:00")
+    # Return only oldest_date and newest_date for your usage
+    return oldest_date, newest_date
+
+def prompt_overwrite_past():
+    answer = input("Do you want to overwrite data in the past? (yes/no): ").strip().lower()
+    return answer == "yes"
 
 user_data = read_user_data(ATP_file_path)
 api_key = user_data.get('API_KEY', "yourapikey")
@@ -98,8 +124,8 @@ def efficient_event_sync(df, athlete_id, username, api_key):
         logging.error("No valid dates found in 'start_date_local'.")
         return
 
-    oldest_date = df['start_date_local'].min().strftime("%Y-%m-%dT00:00:00")
-    newest_date = df['start_date_local'].max().strftime("%Y-%m-%dT00:00:00")
+    # Use ATP period from ATP_Conditions
+    oldest_date, newest_date = read_ATP_period(ATP_file_path)
 
     # Get existing events from the server
     existing_events = get_existing_events(athlete_id, oldest_date, newest_date, username, api_key)
@@ -166,10 +192,24 @@ def efficient_event_sync(df, athlete_id, username, api_key):
             time_module.sleep(parse_delay)
 
 def main():
+    # Prompt user for overwriting past data
+    overwrite_past = prompt_overwrite_past()
     df = pd.read_excel(ATP_file_path, sheet_name=ATP_sheet_name)
     df.fillna(0, inplace=True)
     df['start_date_local'] = pd.to_datetime(df['start_date_local'], errors='coerce')
     df = df.dropna(subset=['start_date_local'])
+
+    # Strictly limit data to ATP period
+    oldest_date, newest_date = read_ATP_period(ATP_file_path)
+    oldest = pd.to_datetime(oldest_date)
+    newest = pd.to_datetime(newest_date)
+    df = df[(df['start_date_local'] >= oldest) & (df['start_date_local'] <= newest)]
+
+    if not overwrite_past:
+        # Only keep events with start_date_local in the future (relative to now)
+        now = datetime.now()
+        df = df[df['start_date_local'] >= now]
+
     efficient_event_sync(df, athlete_id, username, api_key)
 
 if __name__ == "__main__":
