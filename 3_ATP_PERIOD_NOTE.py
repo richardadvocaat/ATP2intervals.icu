@@ -37,7 +37,7 @@ ATP_file_path = rf"C:\TEMP\{Athlete_TLA}\ATP2intervals_{Athlete_TLA}_{ATP_year}.
 
 parse_delay = .01
 note_PERIOD_name = 'Period:'
-NOTES_underline = "\n---\n*made with the 3_ATP_PERIOD_NOTE.py script*"
+NOTES_underline = "\n---\n*made with the 3_ATP_PERIOD_NOTE.py script / From coach Joe*" #fill "" if you want to leave it blank.*"
 
 user_data = read_user_data(ATP_file_path)
 api_key = user_data.get('API_KEY', "yourapikey")
