@@ -56,24 +56,9 @@ url_profile = f"https://intervals.icu/api/v1/athlete/{athlete_id}/profile"
 url_activities = f"https://intervals.icu/api/v1/athlete/{athlete_id}/activities"
 API_headers = {"Content-Type": "application/json"}
 
-def format_activity_name(activity):
-    if activity.lower() == 'mountainbikeride':
-        return 'MountainBikeRide'
-    if activity.lower() == 'openwaterswim':
-        return 'OpenWaterSwim'
-    if activity.lower() == 'gravelride':
-        return 'GravelRide'
-    if activity.lower() == 'trailrun':
-        return 'TrailRun'
-    if activity.lower() == 'rowing':
-        return 'Rowing'
-    if activity.lower() == 'workout':
-        return 'Workout'
-    if activity.lower() == 'snowBoard':
-        return 'Snowboard'
-    if activity.lower() == 'standuppaddling':
-        return 'StandUpPaddling'
-    return ''.join(word.capitalize() for word in activity.split('_'))
+def clean_activity_name(col_name):
+    # Strip '_load' or '_load_target' from column names to get the activity name
+    return col_name.replace('_load_target', '').replace('_load', '')
 
 def distance_conversion_factor(unit_preference):
     conversion_factors = {
@@ -104,10 +89,10 @@ def get_desired_events(df):
         start_date = row['start_date_local'].strftime("%Y-%m-%dT00:00:00")
         for col in df.columns:
             if col.endswith('_load_target'):
-                activity = format_activity_name(col.split('_load')[0])
+                activity = clean_activity_name(col)
                 load = int(row[col])
-                time_col = f"{col.split('_load')[0]}_time"
-                dist_col = f"{col.split('_load')[0]}_distance"
+                time_col = f"{activity}_time"
+                dist_col = f"{activity}_distance"
                 time = int(row[time_col]) * 60 if time_col in row else 0  # Convert seconds to minutes
                 # Only convert distance for non-swimming activities
                 if dist_col in row:
@@ -222,4 +207,5 @@ def main():
 
 if __name__ == "__main__":
     main()
+
 
