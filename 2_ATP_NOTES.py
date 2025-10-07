@@ -1,19 +1,8 @@
-import logging
-import pandas as pd
-import requests
-from requests.auth import HTTPBasicAuth
-import time as time_module
-from datetime import datetime, timedelta
-
-logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+from ATP_common_config import *
+# Now you have access to all the variables and functions defined above.
 
 def format_activity_name(activity):
     return ''.join(word.capitalize() for word in activity.split('_'))
-
-def read_user_data(ATP_file_path, sheet_name="User_Data"):
-    df = pd.read_excel(ATP_file_path, sheet_name=sheet_name)
-    user_data = df.set_index('Key').to_dict()['Value']
-    return user_data
 
 def parse_atp_date(date_str):
     for fmt in ("%d-%m-%Y", "%Y-%m-%d %H:%M:%S", "%Y-%m-%d"):
@@ -34,29 +23,7 @@ def read_ATP_period(ATP_file_path, sheet_name="ATP_Conditions"):
     newest_date = end_date.strftime("%Y-%m-%dT00:00:00")
     return oldest_date, newest_date
 
-Athlete_TLA = "TLA"
-ATP_year = "YYYY"
-ATP_sheet_name = "ATP_Data"
-ATP_sheet_Conditions = "ATP_Conditions"
-ATP_file_path = rf"C:\TEMP\{Athlete_TLA}\ATP2intervals_{Athlete_TLA}_{ATP_year}.xlsm"
-NOTES_underline = "\n---\n*made with the 2_ATP_NOTES.py script / From coach Joe*" #fill "" if you want to leave it blank.
 
-parse_delay = .01
-note_ATP_name_prefix = "Weekly training and focus summary of your ATP"
-
-user_data = read_user_data(ATP_file_path)
-api_key = user_data.get('API_KEY', "yourapikey")
-username = user_data.get('USERNAME', "API_KEY")
-athlete_id = user_data.get('ATHLETE_ID', "athleteid")
-unit_preference = user_data.get('DISTANCE_SYSTEM', "metric")
-note_ATP_color = user_data.get('NOTE_ATP_COLOR', "red")
-note_FEEDBACK_color = user_data.get('NOTE_FEEDBACK_COLOR', "blue")
-do_at_rest = user_data.get('Do_At_Rest', "Do nothing!")
-
-url_base = f"https://intervals.icu/api/v1/athlete/{athlete_id}"
-url_profile = f"{url_base}/profile"
-url_activities = f"{url_base}/activities"
-API_headers = {"Content-Type": "application/json"}
 
 def get_athlete_name(athlete_id, username, api_key):
     response = requests.get(url_profile, auth=HTTPBasicAuth(username, api_key), headers=API_headers)
@@ -110,7 +77,7 @@ def delete_note_event(event_id, athlete_id, username, api_key):
 
 def create_note_event(start_date, description, color, athlete_id, username, api_key, current_week):
     end_date = start_date
-    note_ATP_name = f"{note_ATP_name_prefix} for week {current_week}"
+    note_ATP_name = f"{note_name_prefix_ATP} for week {current_week}"
     post_data = {
         "category": "NOTE",
         "start_date_local": start_date,
@@ -134,7 +101,7 @@ def create_note_event(start_date, description, color, athlete_id, username, api_
 
 def update_note_event(event_id, start_date, description, color, athlete_id, username, api_key, current_week):
     end_date = start_date
-    note_ATP_name = f"{note_ATP_name_prefix} for week {current_week}"
+    note_ATP_name = f"{note_name_prefix_ATP} for week {current_week}"
     put_data = {
         "category": "NOTE",
         "start_date_local": start_date,
@@ -172,7 +139,7 @@ def populate_description(description, first_a_event):
     if first_a_event:
         description = f"- This (part) of the plan aims for **{first_a_event}**.\n\n" + description
     description = f"Hi **{athlete_name}**, here is your weekly ATP summary:\n\n" + description
-    description += NOTES_underline
+    description += note_underline_ATP
     return description
 
 def add_period_description(row, description):
@@ -262,7 +229,7 @@ def main():
         athlete_id, username, api_key,
         oldest_date,
         newest_date,
-        note_ATP_name_prefix
+        note_name_prefix_ATP
     )
 
     # Batch fetch wellness data and calculate weekly loads
@@ -277,7 +244,7 @@ def main():
         start_date = row['start_date_local'].strftime("%Y-%m-%dT00:00:00")
         week = row['start_date_local'].isocalendar()[1]
         year = row['start_date_local'].isocalendar()[0]
-        note_name = f"{note_ATP_name_prefix} for week {week}"
+        note_name = f"{note_name_prefix_ATP} for week {week}"
 
         first_a_event = get_first_a_event(df, start_date)
         description = ""
@@ -298,9 +265,9 @@ def main():
         if existing_note:
             # Only update if content is different
             if existing_note['description'] != desc_full:
-                update_note_event(existing_note['id'], start_date, desc_full, note_ATP_color, athlete_id, username, api_key, week)
+                update_note_event(existing_note['id'], start_date, desc_full, note_color_ATP, athlete_id, username, api_key, week)
         else:
-            create_note_event(start_date, desc_full, note_ATP_color, athlete_id, username, api_key, week)
+            create_note_event(start_date, desc_full, note_color_ATP, athlete_id, username, api_key, week)
         time_module.sleep(parse_delay)
 
 if __name__ == "__main__":

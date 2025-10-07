@@ -1,32 +1,5 @@
-import logging
-import pandas as pd
-import requests
-from requests.auth import HTTPBasicAuth
-from datetime import datetime
-import xlwings as xw
-
-def read_user_data(ATP_file_path, sheet_name="User_Data"):
-    df = pd.read_excel(ATP_file_path, sheet_name=sheet_name)
-    user_data = df.set_index('Key').to_dict()['Value']
-    return user_data
-
-Athlete_TLA = "TLA" #Three letter Acronym of athlete.
-ATP_year = "YYYY" #The year of the plan.
-ATP_file_path = rf"C:\TEMP\{Athlete_TLA}\ATP2intervals_{Athlete_TLA}_{ATP_year}.xlsm"
-
-ATP_sheet_name = "ATP_Data"
-ATP_loadcheck_sheet_name = "WTL" #ATP_loadcheck_sheet_name = "Weekly Type Loads"
-ATP_loadcheck_compare_sheet_name = "WLC" #ATP_loadcheck_compare_sheet_name = "Weekly Load Compare"
-
-ATP_loadcheck_file_path = ATP_file_path   # Now writing directly to the macro file!
-
-user_data = read_user_data(ATP_file_path)
-api_key = user_data.get('API_KEY', "yourapikey")
-username = user_data.get('USERNAME', "API_KEY")
-athlete_id = user_data.get('ATHLETE_ID', "athleteid")
-
-url_base = "https://intervals.icu/api/v1/athlete/{athlete_id}"
-API_headers = {"Content-Type": "application/json"}
+from ATP_common_config import *
+# Now you have access to all the variables and functions defined above.
 
 def get_events(athlete_id, username, api_key, oldest_date, newest_date, category):
     url_get = f"{url_base}/eventsjson".format(athlete_id=athlete_id)

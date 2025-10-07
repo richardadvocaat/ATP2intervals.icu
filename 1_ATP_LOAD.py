@@ -1,22 +1,5 @@
-import logging
-import pandas as pd
-import requests
-from requests.auth import HTTPBasicAuth
-import time as time_module
-from datetime import datetime, timedelta
-
-Athlete_TLA = "TLA" #Three letter Acronym of athlete.
-ATP_year = "YYYY"
-ATP_sheet_name = "ATP_Data"
-ATP_sheet_Conditions = "ATP_Conditions"
-ATP_file_path = rf"C:\TEMP\{Athlete_TLA}\ATP2intervals_{Athlete_TLA}_{ATP_year}.xlsm"
-parse_delay = .00
-change_whole_range = True  # Variable to control whether to change the whole range or only upcoming targets
-
-def read_user_data(ATP_file_path, sheet_name="User_Data"):
-    df = pd.read_excel(ATP_file_path, sheet_name=sheet_name)
-    user_data = df.set_index('Key').to_dict()['Value']
-    return user_data
+from ATP_common_config import *
+# Now you have access to all the variables and functions defined above.
 
 def parse_atp_date(date_str):
     # Try common formats
