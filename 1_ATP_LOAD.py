@@ -60,9 +60,11 @@ def get_desired_events(df):
         for col in df.columns:
             if col.endswith('_load_target'):
                 activity = clean_activity_name(col)
+                if activity in [None, "None", "Total"]:
+                    continue  # Skip these activities
                 load = int(row[col])
-                time_col = f"{activity}_time"
-                dist_col = f"{activity}_distance"
+                time_col = f"{activity}_time_target"
+                dist_col = f"{activity}_distance_target"
                 time = int(row[time_col]) * 60 if time_col in row else 0  # Convert seconds to minutes
                 # Only convert distance for non-swimming activities
                 if dist_col in row:
@@ -177,6 +179,7 @@ def main():
 
 if __name__ == "__main__":
     main()
+
 
 
 
