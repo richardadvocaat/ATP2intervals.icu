@@ -1,4 +1,4 @@
-from ATP_common_config.py import *
+from ATP_common_config import *
 # Now you have access to all the variables and functions defined above.
 
 def format_activity_name(activity):
