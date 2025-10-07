@@ -41,7 +41,7 @@ ATP_sheet_Conditions = "ATP_Conditions"
 ATP_file_path = rf"C:\TEMP\{Athlete_TLA}\ATP2intervals_{Athlete_TLA}_{ATP_year}.xlsm"
 NOTES_underline = "\n---\n*made with the 2_ATP_NOTES.py script / From coach Joe*" #fill "" if you want to leave it blank.
 
-parse_delay = .00
+parse_delay = .01
 note_ATP_name_prefix = "Weekly training and focus summary of your ATP"
 
 user_data = read_user_data(ATP_file_path)
