@@ -1,4 +1,4 @@
-from ATP_common_config.py import *
+from ATP_common_config import *
 # Now you have access to all the variables and functions defined above.
 
 def get_note_color(period): #To do: get this mapping from Excel
