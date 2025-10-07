@@ -26,6 +26,19 @@ def prompt_overwrite_past():
     answer = input("Do you want to overwrite data in the past? (yes/no): ").strip().lower()
     return answer == "yes"
 
+user_data = read_user_data(ATP_file_path)
+api_key = user_data.get('API_KEY', "yourapikey")
+username = user_data.get('USERNAME', "API_KEY")
+athlete_id = user_data.get('ATHLETE_ID', "athleteid")
+unit_preference = user_data.get('DISTANCE_SYSTEM', "metric")
+note_ATP_color = user_data.get('NOTE_ATP_COLOR', "red")
+do_at_rest = user_data.get('Do_At_Rest', "Do nothing!")
+
+url_base = "https://intervals.icu/api/v1/athlete/{athlete_id}"
+url_profile = f"https://intervals.icu/api/v1/athlete/{athlete_id}/profile"
+url_activities = f"https://intervals.icu/api/v1/athlete/{athlete_id}/activities"
+API_headers = {"Content-Type": "application/json"}
+
 def clean_activity_name(col_name):
     # Strip '_load' or '_load_target' from column names to get the activity name
     return col_name.replace('_load_target', '').replace('_load', '')
@@ -179,8 +192,6 @@ def main():
 
 if __name__ == "__main__":
     main()
-
-
 
 
 
