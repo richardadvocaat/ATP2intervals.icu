@@ -11,10 +11,9 @@ ATP_year = "YYYY"
 ATP_sheet_name = "ATP_Data"
 ATP_sheet_Conditions = "ATP_Conditions"
 ATP_file_path = rf"C:\TEMP\{Athlete_TLA}\ATP2intervals_{Athlete_TLA}_{ATP_year}.xlsm"
-parse_delay = .01
-note_FEEDBACK_name_template = "Weekly feedback about your training in week {last_week}"
-#NOTES_underline = "\n---\n*made with the 5_ATP_LOAD_feedback.py script / From coach Joe*"  # fill "" if you want to leave it blank.
-NOTES_underline = "-"
+parse_delay = .00
+note_FEEDBACK_name_template = "Weekly feedback about your trainingload in week {last_week}"
+NOTES_underline = "\n---\n *made with the 5_ATP_WEEKLY_LOAD_FEEDBACK_NOTES.py / From coach Joe*" #use "" if you want to leave it blank.
 compliance_treshold = 0.3
 
 # --- Logging ---
@@ -177,7 +176,7 @@ def format_focus_items_notes(focus_items_notes):
 def populate_description(description):
     if not description:
         description = "Nothing to mention this week."
-    description = f"Hi {athlete_name}, here is your weekly feedback on your training:\n\n" + description
+    description = f"Hi **{athlete_name}**, here is your weekly feedback on your training:\n\n" + description
     description += NOTES_underline
     return description
 
@@ -199,7 +198,7 @@ def add_load_check_description(row, previous_week_loads, previous_week_sheet_loa
         feedback = "You did too much. No problem, but be aware of overreaching."
     elif delta_ctl < -compliance_treshold * previous_week_sheet_load or delta_atl < -compliance_treshold * previous_week_sheet_load:
         feedback = "You did too little. No problem, but don't make a habit of it."
-    description += f"\n\nYour total trainingload for the last week was: {ctl_load}. Compared to the planned load: {previous_week_sheet_load}. Feedback: {feedback}"
+    description += f"- Your **total trainingload** for the last week was: **{ctl_load}**. Compared to the **planned trainingload**: **{previous_week_sheet_load}**.\n\n- **Feedback**: {feedback} \n\n"
     return description
 
 def main():
@@ -235,7 +234,7 @@ def main():
         feedback_note_name = note_FEEDBACK_name_template.format(last_week=previous_week)
         existing_note_event = find_existing_note_event(events, feedback_note_name)
         if year == start_year and week == start_week:
-            current_description = "No feedback for the first week of the ATP"
+            current_description = "- No feedback for the first week of the ATP"
         else:
             current_description = add_load_check_description(row, previous_week_loads, previous_week_sheet_load, "")
         new_full_description = populate_description(current_description)
