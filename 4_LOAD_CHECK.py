@@ -15,10 +15,8 @@ ATP_year = "YYYY" #The year of the plan.
 ATP_file_path = rf"C:\TEMP\{Athlete_TLA}\ATP2intervals_{Athlete_TLA}_{ATP_year}.xlsm"
 
 ATP_sheet_name = "ATP_Data"
-#ATP_loadcheck_sheet_name = "Weekly Type Loads"
-ATP_loadcheck_sheet_name = "WTL"
-#ATP_loadcheck_compare_sheet_name = "Weekly Load Compare"
-ATP_loadcheck_compare_sheet_name = "WLC"
+ATP_loadcheck_sheet_name = "WTL" #ATP_loadcheck_sheet_name = "Weekly Type Loads"
+ATP_loadcheck_compare_sheet_name = "WLC" #ATP_loadcheck_compare_sheet_name = "Weekly Load Compare"
 
 ATP_loadcheck_file_path = ATP_file_path   # Now writing directly to the macro file!
 
