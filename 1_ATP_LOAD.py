@@ -65,6 +65,14 @@ def format_activity_name(activity):
         return 'GravelRide'
     if activity.lower() == 'trailrun':
         return 'TrailRun'
+    if activity.lower() == 'rowing':
+        return 'Rowing'
+    if activity.lower() == 'workout':
+        return 'Workout'
+    if activity.lower() == 'snowBoard':
+        return 'Snowboard'
+    if activity.lower() == 'standuppaddling':
+        return 'StandUpPaddling'
     return ''.join(word.capitalize() for word in activity.split('_'))
 
 def distance_conversion_factor(unit_preference):
@@ -214,3 +222,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+
