@@ -15,10 +15,31 @@ def read_user_data(ATP_file_path, sheet_name="User_Data"):
     user_data = df.set_index('Key').to_dict()['Value']
     return user_data
 
+def parse_atp_date(date_str):
+    for fmt in ("%d-%m-%Y", "%Y-%m-%d %H:%M:%S", "%Y-%m-%d"):
+        try:
+            return datetime.strptime(str(date_str), fmt)
+        except ValueError:
+            continue
+    raise ValueError(f"Date '{date_str}' is not in a recognized format.")
+
+def read_ATP_period(ATP_file_path, sheet_name="ATP_Conditions"):
+    df_cond = pd.read_excel(ATP_file_path, sheet_name=sheet_name, usecols="B:C")
+    cond_dict = dict(zip(df_cond.iloc[:, 0], df_cond.iloc[:, 1]))
+    start_str = cond_dict.get("Start_ATP")
+    end_str = cond_dict.get("End_ATP")
+    start_date = parse_atp_date(start_str)
+    end_date = parse_atp_date(end_str)
+    oldest_date = start_date.strftime("%Y-%m-%dT00:00:00")
+    newest_date = end_date.strftime("%Y-%m-%dT00:00:00")
+    return oldest_date, newest_date
+
 Athlete_TLA = "TLA"
 ATP_year = "YYYY"
 ATP_sheet_name = "ATP_Data"
+ATP_sheet_Conditions = "ATP_Conditions"
 ATP_file_path = rf"C:\TEMP\{Athlete_TLA}\ATP2intervals_{Athlete_TLA}_{ATP_year}.xlsm"
+NOTES_underline = "\n---\n*made with the 2_ATP_NOTES.py script / From coach Joe*" #fill "" if you want to leave it blank.
 
 parse_delay = .01
 note_ATP_name_prefix = "Weekly training and focus summary of your ATP"
@@ -58,7 +79,7 @@ def get_wellness_data(athlete_id, username, api_key, oldest_date, newest_date):
         data = response.json()
         df = pd.DataFrame(data)
         df['date'] = pd.to_datetime(df['id'], errors='coerce')
-        mask = (df['date'] >= oldest_date) & (df['date'] <= newest_date)
+        mask = (df['date'] >= pd.to_datetime(oldest_date)) & (df['date'] <= pd.to_datetime(newest_date))
         return df.loc[mask, ['id', 'ctlLoad', 'atlLoad']].copy()
     logging.error(f"Error fetching wellness data: {response.status_code}")
     return pd.DataFrame(columns=['id', 'ctlLoad', 'atlLoad'])
@@ -75,7 +96,6 @@ def get_existing_note_events(athlete_id, username, api_key, oldest_date, newest_
     response = requests.get(url_get, headers=API_headers, params=params, auth=HTTPBasicAuth(username, api_key))
     if response.status_code == 200:
         events = response.json()
-        # Map by note name for quick lookup
         return {ev['name']: ev for ev in events if ev['name'].startswith(prefix)}
     return {}
 
@@ -152,7 +172,7 @@ def populate_description(description, first_a_event):
     if first_a_event:
         description = f"- This (part) of the plan aims for **{first_a_event}**.\n\n" + description
     description = f"Hi **{athlete_name}**, here is your weekly ATP summary:\n\n" + description
-    description += "\n---\n*made with the 2_ATP_NOTES.py script*"
+    description += NOTES_underline
     return description
 
 def add_period_description(row, description):
@@ -227,17 +247,21 @@ def handle_period_name(period):
     return period
 
 def main():
+    oldest_date, newest_date = read_ATP_period(ATP_file_path, sheet_name=ATP_sheet_Conditions)
     df = pd.read_excel(ATP_file_path, sheet_name=ATP_sheet_name)
     df.fillna(0, inplace=True)
+    df['start_date_local'] = pd.to_datetime(df['start_date_local'], errors='coerce')
+    df = df.dropna(subset=['start_date_local'])
+    oldest = pd.to_datetime(oldest_date)
+    newest = pd.to_datetime(newest_date)
+    df = df[(df['start_date_local'] >= oldest) & (df['start_date_local'] <= newest)]
     df['year_week'] = df['start_date_local'].apply(lambda x: f"{x.isocalendar()[0]}-{x.isocalendar()[1]}")
-    oldest_date = df['start_date_local'].min()
-    newest_date = df['start_date_local'].max()
 
     # Batch fetch existing NOTE events
     existing_notes = get_existing_note_events(
         athlete_id, username, api_key,
-        oldest_date.strftime("%Y-%m-%dT00:00:00"),
-        newest_date.strftime("%Y-%m-%dT00:00:00"),
+        oldest_date,
+        newest_date,
         note_ATP_name_prefix
     )
 
@@ -248,7 +272,7 @@ def main():
     )
     weekly_loads = calculate_weekly_loads_vectorized(wellness_df)
 
-    # Main: create, update or delete NOTE events per week
+    # Main: create or update NOTE events per week
     for index, row in df.iterrows():
         start_date = row['start_date_local'].strftime("%Y-%m-%dT00:00:00")
         week = row['start_date_local'].isocalendar()[1]
@@ -267,21 +291,16 @@ def main():
             description = race_focus_description
 
         desc_full = populate_description(description, first_a_event)
-        nothing_to_mention = desc_full.strip().endswith("Nothing to mention this week.\n---\n*made with the 2_ATP_NOTES.py script*")
 
         existing_note = existing_notes.get(note_name)
 
-        if nothing_to_mention:
-            # Delete only if a note exists for this week
-            if existing_note:
-                delete_note_event(existing_note['id'], athlete_id, username, api_key)
+        # Always create or update notes, even if nothing to mention
+        if existing_note:
+            # Only update if content is different
+            if existing_note['description'] != desc_full:
+                update_note_event(existing_note['id'], start_date, desc_full, note_ATP_color, athlete_id, username, api_key, week)
         else:
-            if existing_note:
-                # Only update if content is different
-                if existing_note['description'] != desc_full:
-                    update_note_event(existing_note['id'], start_date, desc_full, note_ATP_color, athlete_id, username, api_key, week)
-            else:
-                create_note_event(start_date, desc_full, note_ATP_color, athlete_id, username, api_key, week)
+            create_note_event(start_date, desc_full, note_ATP_color, athlete_id, username, api_key, week)
         time_module.sleep(parse_delay)
 
 if __name__ == "__main__":
