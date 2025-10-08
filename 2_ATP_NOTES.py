@@ -1,5 +1,29 @@
 from ATP_common_config import *
-# Now you have access to all the variables and functions defined above.
+import time
+import random
+
+# --- API Rate Limiting and Retry Logic ---
+MAX_RETRIES = 4
+INITIAL_BACKOFF = 0.5  # seconds
+MAX_BACKOFF = 8.0      # seconds
+RATE_LIMIT_DELAY = 0.25  # seconds
+
+def call_with_retries(request_func, *args, **kwargs):
+    """Call an API function with retries and exponential backoff."""
+    delay = INITIAL_BACKOFF
+    for attempt in range(MAX_RETRIES):
+        response = request_func(*args, **kwargs)
+        if response.status_code in (200, 201, 204):
+            time.sleep(RATE_LIMIT_DELAY)  # Rate limiting after successful call
+            return response
+        elif response.status_code in (429, 500, 502, 503, 504):  # Retryable errors
+            logging.warning(f"API call failed with {response.status_code}, retry #{attempt + 1} after {delay}s.")
+            time.sleep(delay + random.uniform(0, 0.25))
+            delay = min(MAX_BACKOFF, delay * 2)
+        else:
+            logging.error(f"API call failed with {response.status_code}: {getattr(response, 'text', '')}")
+            break
+    return response  # Return last response for error handling
 
 def format_activity_name(activity):
     return ''.join(word.capitalize() for word in activity.split('_'))
@@ -23,10 +47,8 @@ def read_ATP_period(ATP_file_path, sheet_name="ATP_Conditions"):
     newest_date = end_date.strftime("%Y-%m-%dT00:00:00")
     return oldest_date, newest_date
 
-
-
 def get_athlete_name(athlete_id, username, api_key):
-    response = requests.get(url_profile, auth=HTTPBasicAuth(username, api_key), headers=API_headers)
+    response = call_with_retries(requests.get, url_profile, auth=HTTPBasicAuth(username, api_key), headers=API_headers)
     if response.status_code == 200:
         profile = response.json()
         full_name = profile.get('athlete', {}).get('name', 'Athlete without name')
@@ -41,12 +63,13 @@ logging.info(f"Using athlete first name: {athlete_name} for further processing."
 
 def get_wellness_data(athlete_id, username, api_key, oldest_date, newest_date):
     url_wellness = f"https://intervals.icu/api/v1/athlete/{athlete_id}/wellness"
-    response = requests.get(url_wellness, headers=API_headers, auth=HTTPBasicAuth(username, api_key))
+    response = call_with_retries(requests.get, url_wellness, headers=API_headers, auth=HTTPBasicAuth(username, api_key))
     if response.status_code == 200:
         data = response.json()
         df = pd.DataFrame(data)
         df['date'] = pd.to_datetime(df['id'], errors='coerce')
         mask = (df['date'] >= pd.to_datetime(oldest_date)) & (df['date'] <= pd.to_datetime(newest_date))
+        logging.info(f"Fetched wellness data for athlete {athlete_id}")
         return df.loc[mask, ['id', 'ctlLoad', 'atlLoad']].copy()
     logging.error(f"Error fetching wellness data: {response.status_code}")
     return pd.DataFrame(columns=['id', 'ctlLoad', 'atlLoad'])
@@ -55,25 +78,28 @@ def calculate_weekly_loads_vectorized(wellness_df):
     wellness_df['date'] = pd.to_datetime(wellness_df['id'], errors='coerce')
     wellness_df['year_week'] = wellness_df['date'].dt.strftime("%Y-%U")
     weekly = wellness_df.groupby('year_week')[['ctlLoad', 'atlLoad']].sum()
+    logging.info("Calculated weekly loads from wellness data")
     return weekly
 
 def get_existing_note_events(athlete_id, username, api_key, oldest_date, newest_date, prefix):
     url_get = f"{url_base}/eventsjson"
     params = {"oldest": oldest_date, "newest": newest_date, "category": "NOTE"}
-    response = requests.get(url_get, headers=API_headers, params=params, auth=HTTPBasicAuth(username, api_key))
+    response = call_with_retries(requests.get, url_get, headers=API_headers, params=params, auth=HTTPBasicAuth(username, api_key))
     if response.status_code == 200:
         events = response.json()
+        logging.info(f"Fetched existing NOTE events for athlete {athlete_id}")
         return {ev['name']: ev for ev in events if ev['name'].startswith(prefix)}
+    logging.error(f"Failed to fetch existing NOTE events: {response.status_code}")
     return {}
 
 def delete_note_event(event_id, athlete_id, username, api_key):
     url_del = f"{url_base}/events/{event_id}"
-    response_del = requests.delete(url_del, headers=API_headers, auth=HTTPBasicAuth(username, api_key))
+    response_del = call_with_retries(requests.delete, url_del, headers=API_headers, auth=HTTPBasicAuth(username, api_key))
     if response_del.status_code == 200:
         logging.info(f"Deleted NOTE event ID={event_id}")
     else:
         logging.error(f"Error deleting NOTE event ID={event_id}: {response_del.status_code}")
-    time_module.sleep(parse_delay)
+    time.sleep(parse_delay)
 
 def create_note_event(start_date, description, color, athlete_id, username, api_key, current_week):
     end_date = start_date
@@ -92,12 +118,12 @@ def create_note_event(start_date, description, color, athlete_id, username, api_
         "for_week": "true"
     }
     url_post = f"{url_base}/events"
-    response_post = requests.post(url_post, headers=API_headers, json=post_data, auth=HTTPBasicAuth(username, api_key))
+    response_post = call_with_retries(requests.post, url_post, headers=API_headers, json=post_data, auth=HTTPBasicAuth(username, api_key))
     if response_post.status_code == 200:
         logging.info(f"Created NOTE event: {note_ATP_name}")
     else:
         logging.error(f"Error creating NOTE event: {note_ATP_name}, code={response_post.status_code}")
-    time_module.sleep(parse_delay)
+    time.sleep(parse_delay)
 
 def update_note_event(event_id, start_date, description, color, athlete_id, username, api_key, current_week):
     end_date = start_date
@@ -116,12 +142,12 @@ def update_note_event(event_id, start_date, description, color, athlete_id, user
         "for_week": "true"
     }
     url_put = f"{url_base}/events/{event_id}"
-    response_put = requests.put(url_put, headers=API_headers, json=put_data, auth=HTTPBasicAuth(username, api_key))
+    response_put = call_with_retries(requests.put, url_put, headers=API_headers, json=put_data, auth=HTTPBasicAuth(username, api_key))
     if response_put.status_code == 200:
         logging.info(f"Updated NOTE event: {note_ATP_name}")
     else:
         logging.error(f"Error updating NOTE event: {note_ATP_name}, code={response_put.status_code}")
-    time_module.sleep(parse_delay)
+    time.sleep(parse_delay)
 
 def get_first_a_event(df, note_event_date):
     note_date = datetime.strptime(note_event_date, "%Y-%m-%dT00:00:00")
@@ -224,6 +250,8 @@ def main():
     df = df[(df['start_date_local'] >= oldest) & (df['start_date_local'] <= newest)]
     df['year_week'] = df['start_date_local'].apply(lambda x: f"{x.isocalendar()[0]}-{x.isocalendar()[1]}")
 
+    logging.info("Starting ATP NOTE event sync process.")
+
     # Batch fetch existing NOTE events
     existing_notes = get_existing_note_events(
         athlete_id, username, api_key,
@@ -265,10 +293,14 @@ def main():
         if existing_note:
             # Only update if content is different
             if existing_note['description'] != desc_full:
+                logging.info(f"Updating NOTE event for week {week}")
                 update_note_event(existing_note['id'], start_date, desc_full, note_color_ATP, athlete_id, username, api_key, week)
+            else:
+                logging.info(f"No NOTE update needed for week {week}")
         else:
+            logging.info(f"Creating new NOTE event for week {week}")
             create_note_event(start_date, desc_full, note_color_ATP, athlete_id, username, api_key, week)
-        time_module.sleep(parse_delay)
+        time.sleep(parse_delay)
 
 if __name__ == "__main__":
     main()
