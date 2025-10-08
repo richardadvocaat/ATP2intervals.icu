@@ -18,13 +18,42 @@ You can also set time- and distance targets per activity-typ, but I kept this fr
 **The first Python script ([1_ATP_LOAD.py](https://github.com/richardadvocaat/ATP2intervals.icu/blob/main/1_ATP_LOAD.py))** automates the process of sending an annual training plan (ATP) with the coach's made ATP to intervals.icu so it wil make weekly targets for TSS (load), time, or distance.
 Find more information about ATP on the [intervals.icu forum](https://forum.intervals.icu/t/apps-in-excel-a-guide-to-getting-started/20844).
 
+From:
+
+<img width="1056" height="214" alt="image" src="https://github.com/user-attachments/assets/84a011e8-ed53-4f35-a8c9-fedef38f91da" />
+
+To:
+
+<img width="251" height="234" alt="image" src="https://github.com/user-attachments/assets/41e1b88a-821a-44f9-8e4b-e1ad8536bae0" />
+
+
+
+
 **The second script ([2_ATP_NOTES.py](https://github.com/richardadvocaat/ATP2intervals.icu/blob/main/2_ATP_NOTES.py))** makes notes with multiple comments for your athlete to intervals.icu. It will give information about the main goal, upcoming events and items to focus on. It reads data from the ATP-sheet and sends notes to intervals.icu.
 
+<img width="468" height="196" alt="image" src="https://github.com/user-attachments/assets/ea32cf3f-cb10-4287-8c3d-dedcef4cab49" />
+
+
 **The third script ([3_ATP_PERIOD_NOTE.py](https://github.com/richardadvocaat/ATP2intervals.icu/blob/main/3_ATP_PERIOD_NOTE.py))** makes a note along the whole period (build, transition, race etc.) in intervals.icu. So the fitness-chart is easier tot read and the different periods are easy to recognise.
+
+In the calendar:
+
+<img width="466" height="203" alt="image" src="https://github.com/user-attachments/assets/d7bd0689-f2ba-4215-ae5c-3c3bb459034f" />
+
+In the Fitness Chart:
+
+<img width="305" height="192" alt="image" src="https://github.com/user-attachments/assets/af0fbb1d-68c8-4063-a279-eb58fd992364" />
+
 
 **The fourth script ([4_LOAD_CHECK.py](https://github.com/richardadvocaat/ATP2intervals.icu/blob/main/4_LOAD_CHECK.py))** compares the planned target loads in intervals.icu with the planned loads in the ATP and updates accordingly.
 
 **The fifth script ([5_ATP_WEEKLY_LOAD_FEEDBACK_NOTES.py](https://github.com/richardadvocaat/ATP2intervals.icu/blob/main/5_ATP_WEEKLY_LOAD_FEEDBACK_NOTES.py))** checks if the athlete was compliant to the plan based on the reported load, time, and distance in intervals.icu. This script can be used to automate the proces to check if the athlete was compliant to the ATP. Not that usefull for a truely committed coaches or trainera, because normaly this is not something that can be automated. ;-)
+
+Be compliant or....
+
+<img width="468" height="204" alt="image" src="https://github.com/user-attachments/assets/3bcc4ecc-b93d-49a8-9b96-8ac985b79358" />
+
+
 
 ## Features
 
