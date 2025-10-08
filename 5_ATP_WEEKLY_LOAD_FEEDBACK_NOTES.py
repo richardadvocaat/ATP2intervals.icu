@@ -1,11 +1,33 @@
 from ATP_common_config import *
-# Now you have access to all the variables and functions defined above.
+import time
+import random
+
+# --- API Rate Limiting and Retry Logic ---
+MAX_RETRIES = 4
+INITIAL_BACKOFF = 0.5  # seconds
+MAX_BACKOFF = 8.0      # seconds
+RATE_LIMIT_DELAY = 0.25  # seconds
+
+def call_with_retries(request_func, *args, **kwargs):
+    delay = INITIAL_BACKOFF
+    for attempt in range(MAX_RETRIES):
+        response = request_func(*args, **kwargs)
+        if response.status_code in (200, 201, 204):
+            time.sleep(RATE_LIMIT_DELAY)
+            return response
+        elif response.status_code in (429, 500, 502, 503, 504):
+            logging.warning(f"API call failed with {response.status_code}, retry #{attempt + 1} after {delay}s.")
+            time.sleep(delay + random.uniform(0, 0.25))
+            delay = min(MAX_BACKOFF, delay * 2)
+        else:
+            logging.error(f"API call failed with {response.status_code}: {getattr(response, 'text', '')}")
+            break
+    return response
 
 def format_activity_name(activity):
     return ''.join(word.capitalize() for word in activity.split('_'))
 
 def parse_atp_date(date_str):
-    # Try common formats
     for fmt in ("%d-%m-%Y", "%Y-%m-%d %H:%M:%S", "%Y-%m-%d"):
         try:
             return datetime.strptime(str(date_str), fmt)
@@ -36,7 +58,7 @@ oldest_date = start_atp_date
 newest_date = end_atp_date
 
 def get_athlete_name(athlete_id, username, api_key):
-    response = requests.get(url_profile, auth=HTTPBasicAuth(username, api_key), headers=API_headers)
+    response = call_with_retries(requests.get, url_profile, auth=HTTPBasicAuth(username, api_key), headers=API_headers)
     logging.info(f"Response Status Code: {response.status_code}")
     if response.status_code == 200:
         profile = response.json()
@@ -56,15 +78,15 @@ logging.info(f"Using athlete first name: {athlete_name} for further processing."
 
 def get_wellness_data(athlete_id, username, api_key, oldest_date, newest_date):
     url_wellness = f"https://intervals.icu/api/v1/athlete/{athlete_id}/wellness"
-    response = requests.get(url_wellness, headers=API_headers, auth=HTTPBasicAuth(username, api_key))
+    response = call_with_retries(requests.get, url_wellness, headers=API_headers, auth=HTTPBasicAuth(username, api_key))
     if response.status_code == 200:
         data = response.json()
-        # Filter to include only date, ctlLoad, and atlLoad within the date range
         filtered_data = [
             { "id": entry["id"], "ctlLoad": entry.get("ctlLoad", 0), "atlLoad": entry.get("atlLoad", 0) }
             for entry in data
             if oldest_date <= datetime.strptime(entry["id"], "%Y-%m-%d") <= newest_date
         ]
+        logging.info(f"Fetched wellness data for athlete {athlete_id}")
         return filtered_data
     else:
         logging.error(f"Error fetching wellness data: {response.status_code}")
@@ -84,53 +106,8 @@ def calculate_weekly_loads(wellness_data):
         weekly_loads[year_week]['ctlLoad'] += round(entry.get('ctlLoad', 0))
         weekly_loads[year_week]['atlLoad'] += round(entry.get('atlLoad', 0))
         logging.debug(f"Year-Week {year_week}: ctlLoad={weekly_loads[year_week]['ctlLoad']}, atlLoad={weekly_loads[year_week]['atlLoad']}")
+    logging.info("Calculated weekly loads from wellness data")
     return weekly_loads
-
-def find_existing_note_event(events, feedback_note_name):
-    for event in events:
-        if event.get('name') == feedback_note_name and event.get('category') == 'NOTE':
-            return event
-    return None
-
-def create_update_or_delete_note_event(start_date, description, color, events, athlete_id, username, api_key, last_week, existing_note_event=None):
-    end_date = start_date
-    description = populate_description(description)
-    post_data = {
-        "category": "NOTE",
-        "start_date_local": start_date,
-        "end_date_local": end_date,
-        "name": note_name_template_FEEDBACK.format(last_week=last_week),
-        "description": description,
-        "not_on_fitness_chart": "true",
-        "show_as_note": "false",
-        "show_on_ctl_line": "false",
-        "athlete_cannot_edit": "false",
-        "color": color,
-        "for_week": "true"
-    }
-    if existing_note_event:
-        # Update existing note
-        url_update = f"{url_base}/events/{existing_note_event['id']}".format(athlete_id=athlete_id)
-        put_data = {
-            "description": description,
-            "color": color
-        }
-        response_put = requests.put(url_update, headers=API_headers, json=put_data, auth=HTTPBasicAuth(username, api_key))
-        if response_put.status_code == 200:
-            logging.info(f"Updated event NOTE for {start_date}!")
-        else:
-            logging.error(f"Error updating event NOTE on {start_date}: {response_put.status_code}")
-        time_module.sleep(parse_delay)
-    else:
-        # Create new note
-        logging.info(f"New event: Data={post_data}")
-        url_post = f"{url_base}/events".format(athlete_id=athlete_id)
-        response_post = requests.post(url_post, headers=API_headers, json=post_data, auth=HTTPBasicAuth(username, api_key))
-        if response_post.status_code == 200:
-            logging.info(f"New event created on {start_date}!")
-        else:
-            logging.error(f"Error creating event on {start_date}: {response_post.status_code}")
-        time_module.sleep(parse_delay)
 
 def format_focus_items_notes(focus_items_notes):
     if len(focus_items_notes) > 1:
@@ -165,6 +142,64 @@ def add_load_check_description(row, previous_week_loads, previous_week_sheet_loa
     description += f"- Your **total trainingload** for the last week was: **{ctl_load}**. Compared to the **planned trainingload**: **{previous_week_sheet_load}**.\n\n- **Feedback**: {feedback} \n\n"
     return description
 
+def get_existing_feedback_notes(athlete_id, username, api_key, oldest_date, newest_date, note_name_template_FEEDBACK):
+    url_get = f"{url_base}/eventsjson".format(athlete_id=athlete_id)
+    params = {
+        "oldest": oldest_date.strftime("%Y-%m-%dT00:00:00"),
+        "newest": newest_date.strftime("%Y-%m-%dT00:00:00"),
+        "category": "NOTE"
+    }
+    response = call_with_retries(requests.get, url_get, headers=API_headers, params=params, auth=HTTPBasicAuth(username, api_key))
+    if response.status_code == 200:
+        events = response.json()
+        logging.info(f"Fetched existing feedback NOTE events for athlete {athlete_id}")
+        return {ev['name']: ev for ev in events if ev.get('category') == 'NOTE' and ev['name'].startswith(note_name_template_FEEDBACK.split('{')[0])}
+    logging.error(f"Failed to fetch existing feedback NOTE events: {response.status_code}")
+    return {}
+
+def update_note_event(event_id, start_date, description, color, athlete_id, username, api_key, last_week):
+    url_put = f"{url_base}/events/{event_id}".format(athlete_id=athlete_id)
+    put_data = {
+        "description": description,
+        "color": color
+    }
+    response_put = call_with_retries(requests.put, url_put, headers=API_headers, json=put_data, auth=HTTPBasicAuth(username, api_key))
+    if response_put.status_code == 200:
+        logging.info(f"Updated feedback NOTE event for week {last_week}")
+    else:
+        logging.error(f"Error updating feedback NOTE event for week {last_week}: {response_put.status_code}")
+
+def create_note_event(start_date, description, color, athlete_id, username, api_key, last_week):
+    end_date = start_date
+    note_name = note_name_template_FEEDBACK.format(last_week=last_week)
+    post_data = {
+        "category": "NOTE",
+        "start_date_local": start_date,
+        "end_date_local": end_date,
+        "name": note_name,
+        "description": description,
+        "not_on_fitness_chart": "true",
+        "show_as_note": "false",
+        "show_on_ctl_line": "false",
+        "athlete_cannot_edit": "false",
+        "color": color,
+        "for_week": "true"
+    }
+    url_post = f"{url_base}/events".format(athlete_id=athlete_id)
+    response_post = call_with_retries(requests.post, url_post, headers=API_headers, json=post_data, auth=HTTPBasicAuth(username, api_key))
+    if response_post.status_code == 200:
+        logging.info(f"Created feedback NOTE event for week {last_week}")
+    else:
+        logging.error(f"Error creating feedback NOTE event for week {last_week}: {response_post.status_code}")
+
+def delete_note_event(event_id, athlete_id, username, api_key, last_week):
+    url_del = f"{url_base}/events/{event_id}".format(athlete_id=athlete_id)
+    response_del = call_with_retries(requests.delete, url_del, headers=API_headers, auth=HTTPBasicAuth(username, api_key))
+    if response_del.status_code == 200:
+        logging.info(f"Deleted feedback NOTE event for week {last_week}")
+    else:
+        logging.error(f"Error deleting feedback NOTE event for week {last_week}: {response_del.status_code}")
+
 def main():
     df = pd.read_excel(ATP_file_path, sheet_name=ATP_sheet_name)
     df.fillna(0, inplace=True)
@@ -174,14 +209,18 @@ def main():
     df['year_week'] = df['start_date_local'].apply(lambda x: f"{x.isocalendar()[0]}-{x.isocalendar()[1]}")
     start_week = start_atp_date.isocalendar()[1]
     start_year = start_atp_date.isocalendar()[0]
-    url_get = f"{url_base}/eventsjson".format(athlete_id=athlete_id)
-    params = {
-        "oldest": oldest_date.strftime("%Y-%m-%dT00:00:00"),
-        "newest": newest_date.strftime("%Y-%m-%dT00:00:00")
-    }
-    response = requests.get(url_get, headers=API_headers, params=params, auth=HTTPBasicAuth(username, api_key))
-    events = response.json() if response.status_code == 200 else []
     today = datetime.today().date()
+
+    # Batch fetch existing feedback NOTE events
+    existing_notes = get_existing_feedback_notes(
+        athlete_id, username, api_key,
+        oldest_date,
+        newest_date,
+        note_name_template_FEEDBACK
+    )
+
+    # Determine desired feedback notes for each week
+    desired_notes = {}
     for index, row in df.iterrows():
         start_date = row['start_date_local'].date()
         if start_date > today:
@@ -196,30 +235,37 @@ def main():
         weekly_loads = calculate_weekly_loads(wellness_data)
         previous_week_loads = weekly_loads.get(previous_year_week, {'ctlLoad': 0, 'atlLoad': 0})
         feedback_note_name = note_name_template_FEEDBACK.format(last_week=previous_week)
-        existing_note_event = find_existing_note_event(events, feedback_note_name)
         if year == start_year and week == start_week:
             current_description = "- No feedback for the first week of the ATP"
         else:
             current_description = add_load_check_description(row, previous_week_loads, previous_week_sheet_load, "")
-        new_full_description = populate_description(current_description)
-        if existing_note_event:
-            if existing_note_event.get('description', '') != new_full_description:
-                create_update_or_delete_note_event(
-                    start_date_str, current_description, note_color_FEEDBACK, events,
-                    athlete_id, username, api_key, previous_week, existing_note_event=existing_note_event
-                )
+        full_description = populate_description(current_description)
+        desired_notes[feedback_note_name] = {
+            "start_date": start_date_str,
+            "description": full_description,
+            "color": note_color_FEEDBACK,
+            "week": previous_week
+        }
+
+    # Sync notes: update/create/delete as needed
+    for note_name, note in desired_notes.items():
+        ex_note = existing_notes.get(note_name)
+        if ex_note:
+            if ex_note.get('description', '') != note["description"]:
+                logging.info(f"Updating feedback NOTE event: {note_name}")
+                update_note_event(ex_note['id'], note["start_date"], note["description"], note["color"], athlete_id, username, api_key, note["week"])
             else:
-                logging.info(f"No update needed for feedback NOTE {feedback_note_name}.")
-            continue
+                logging.info(f"No update needed for feedback NOTE event: {note_name}")
         else:
-            if new_full_description.strip():
-                create_update_or_delete_note_event(
-                    start_date_str, current_description, note_color_FEEDBACK, events,
-                    athlete_id, username, api_key, previous_week, existing_note_event=None
-                )
-        time_module.sleep(parse_delay)
+            logging.info(f"Creating feedback NOTE event: {note_name}")
+            create_note_event(note["start_date"], note["description"], note["color"], athlete_id, username, api_key, note["week"])
+        time.sleep(parse_delay)
+    # Delete obsolete notes
+    for note_name, ex_note in existing_notes.items():
+        if note_name not in desired_notes:
+            logging.info(f"Deleting obsolete feedback NOTE event: {note_name}")
+            delete_note_event(ex_note['id'], athlete_id, username, api_key, note_name)
+            time.sleep(parse_delay)
 
 if __name__ == "__main__":
     main()
-
-
