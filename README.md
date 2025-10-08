@@ -1,9 +1,13 @@
-# ATP2intervals.icu
+# ATP2intervals.icu 
 
 This is a set of scripts that transfers data from an Annual Training Plan to intervals.icu. The idea is that you can trickle down a weekly load to different types of sport and send them to intervals.icu.
 
 To Do: Store parameters for the coach in a separate document where the coached athlete names are also stored. (or get this list from intervals.icu.)
-The idea is that it must be an easy job to populate intervals.icu with the coach's made ATP.
+The idea is that it must be an easy job to populate intervals.icu with the coach's made ATP. For now, this works quite ok!
+I made seperat scripts to keep it maintainable. The first 3 are most important to populate intervals.icu with the data from the ATP. The fourth scripts writes the plannen load from the workouts back to the excelsheet. So you can compare the advised load (TSS) with the already planned load. In the excelsheet, you can oeverwrite the loads (they will ben rounded), adjust them and rerun script 1. Then the planned loads are equal with the target loads.
+
+You can also set time- and distance targets per activity-typ, but I kept this from furter checks. 
+
 
 ## What's in it
 
