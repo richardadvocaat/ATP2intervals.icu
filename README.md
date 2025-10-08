@@ -7,6 +7,7 @@ I made seperate scripts to keep it maintainable. The first 3 are most important 
 
 You can also set time- and distance targets per activity-type, but I kept these away from furter checks. (by now....)
 
+Do you have suggestions for improvement or other ideas? Use this treath on the intervals.icu forum: [ATP2intervals: python scripts to transfer ATP to intervals.icu](https://forum.intervals.icu/t/atp2intervals-python-scripts-to-transfer-atp-to-intervals-icu/91769)
 
 ## What's in it
 
