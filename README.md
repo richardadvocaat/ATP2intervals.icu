@@ -34,7 +34,7 @@ To:
 <img width="468" height="196" alt="image" src="https://github.com/user-attachments/assets/ea32cf3f-cb10-4287-8c3d-dedcef4cab49" />
 
 
-**The third script ([3_ATP_PERIOD_NOTE.py](https://github.com/richardadvocaat/ATP2intervals.icu/blob/main/3_ATP_PERIOD_NOTE.py))** makes a note along the whole period (build, transition, race etc.) in intervals.icu. So the fitness-chart is easier tot read and the different periods are easy to recognise.
+**The third script ([3_ATP_PERIOD_NOTE.py](https://github.com/richardadvocaat/ATP2intervals.icu/blob/main/3_ATP_PERIOD_NOTE.py))** makes a note along the whole period (build, transition, race etc.) in intervals.icu. So the fitness-chart is easier to read and the different periods are easy to recognise.
 
 In the calendar:
 
