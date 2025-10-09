@@ -53,7 +53,7 @@ Be compliant or....
 
 <img width="468" height="204" alt="image" src="https://github.com/user-attachments/assets/3bcc4ecc-b93d-49a8-9b96-8ac985b79358" />
 
-**The last script ([NOTE_REMOVER.py](https://github.com/richardadvocaat/ATP2intervals.icu/blob/main/NOTE_REMOVER.py))** can be used to delete NOTES within a certain year and containing word. In case one of the scripts messed stuff up in intervals.icu. :-)
+**The last script ([NOTE_REMOVER.py](https://github.com/richardadvocaat/ATP2intervals.icu/blob/main/NOTE_REMOVER.py))** can be used to delete NOTES within a certain year and containing word. In case one of the scripts messed up stuff in intervals.icu. :-)
 
 
 ## Features
