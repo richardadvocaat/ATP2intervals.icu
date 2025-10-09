@@ -93,3 +93,4 @@ Be compliant or....
 ## To Do
 
 1. Store parameters for the coach in a separate document where the coached athlete names are also stored. (or get this list from intervals.icu.)
+2. Variables are spread trough the scripts and sheet. I need to fix that, so al variables are stored at one place..
