@@ -47,7 +47,7 @@ In the Fitness Chart:
 
 **The fourth script ([4_LOAD_CHECK.py](https://github.com/richardadvocaat/ATP2intervals.icu/blob/main/4_LOAD_CHECK.py))** compares the planned target loads in intervals.icu with the planned loads in the ATP and updates accordingly.
 
-**The fifth script ([5_ATP_WEEKLY_LOAD_FEEDBACK_NOTES.py](https://github.com/richardadvocaat/ATP2intervals.icu/blob/main/5_ATP_WEEKLY_LOAD_FEEDBACK_NOTES.py))** checks if the athlete was compliant to the plan based on the reported load, time, and distance in intervals.icu. This script can be used to automate the proces to check if the athlete was compliant to the ATP. Not that usefull for a truely committed coaches or trainera, because normaly this is not something that can be automated. ;-)
+**The fifth script ([5_ATP_WEEKLY_LOAD_FEEDBACK_NOTES.py](https://github.com/richardadvocaat/ATP2intervals.icu/blob/main/5_ATP_WEEKLY_LOAD_FEEDBACK_NOTES.py))** checks if the athlete was compliant to the plan based on the reported load (and not yet: time, and distance) in intervals.icu. This script can be used to automate the proces to check if the athlete was compliant to the ATP. Not that usefull for a truely committed coache or trainer, because normaly this is not something that can be automated. ;-)
 
 Be compliant or....
 
