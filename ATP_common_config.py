@@ -5,6 +5,11 @@ from requests.auth import HTTPBasicAuth
 import time as time_module
 from datetime import datetime, timedelta
 import xlwings as xw
+import time
+import random
+from functools import wraps
+import os
+
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
@@ -22,10 +27,9 @@ ATP_loadcheck_compare_sheet_name = "WLC"  # "Weekly Load Compare"
 ATP_loadcheck_file_path = ATP_file_path   # Now writing directly to the macro file!
 
 compliance_treshold = 0.3
-
-note_underline_ATP = f"\n---\n *made with the 2_ATP_NOTES.py script / From coach {coach_name}*"
-note_underline_FEEDBACK = f"\n---\n *made with the 5_ATP_WEEKLY_LOAD_FEEDBACK_NOTES.py / From coach {coach_name}*"
-note_underline_PERIOD = f"\n---\n *made with the 3_ATP_PERIOD_NOTE.py script / From coach {coach_name}*"
+note_underline_ATP = f"\n---\n *made with the {os.path.basename(__file__)} script / From coach {coach_name}*"
+note_underline_FEEDBACK = f"\n---\n *made with the {os.path.basename(__file__)} script / From coach {coach_name}*"
+note_underline_PERIOD = f"\n---\n *made with the {os.path.basename(__file__)} script / From coach {coach_name}*"
 note_name_prefix_ATP = "Weekly training and focus summary of your ATP"
 note_name_PERIOD = 'Period:'
 note_name_template_FEEDBACK = "Weekly feedback about your trainingload in week {last_week}"
