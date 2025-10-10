@@ -1,5 +1,29 @@
 from ATP_common_config import *
-# Now you have access to all the variables and functions defined above.
+import time
+import random
+
+# --- API Rate Limiting and Retry Logic (from 1_ATP_LOAD.py) ---
+MAX_RETRIES = 4
+INITIAL_BACKOFF = 0.5  # seconds
+MAX_BACKOFF = 8.0      # seconds
+RATE_LIMIT_DELAY = 0.25  # seconds
+
+def call_with_retries(request_func, *args, **kwargs):
+    """Call an API function with retries and exponential backoff."""
+    delay = INITIAL_BACKOFF
+    for attempt in range(MAX_RETRIES):
+        response = request_func(*args, **kwargs)
+        if response.status_code in (200, 201, 204):
+            time.sleep(RATE_LIMIT_DELAY)
+            return response
+        elif response.status_code in (429, 500, 502, 503, 504):  # Retryable errors
+            logging.warning(f"API call failed with {response.status_code}, retry #{attempt + 1} after {delay}s.")
+            time.sleep(delay + random.uniform(0, 0.25))
+            delay = min(MAX_BACKOFF, delay * 2)
+        else:
+            logging.error(f"API call failed with {response.status_code}: {getattr(response, 'text', '')}")
+            break
+    return response  # Return last response for error handling
 
 def get_note_color(period): #To do: get this mapping from Excel
     base_period = period.split()[0]
@@ -44,11 +68,12 @@ def get_period_end_date(df, start_index):
             return get_last_day_of_week(df.at[i-1, 'start_date_local'])
     return get_last_day_of_week(df.at[len(df)-1, 'start_date_local'])
 
-
 def delete_events(athlete_id, username, api_key, oldest_date, newest_date, category, name_prefix):
     url_get = f"{url_base}/eventsjson".format(athlete_id=athlete_id)
     params = {"oldest": oldest_date, "newest": newest_date, "category": category}
-    response_get = requests.get(url_get, headers=API_headers, params=params, auth=HTTPBasicAuth(username, api_key))
+    response_get = call_with_retries(
+        requests.get, url_get, headers=API_headers, params=params, auth=HTTPBasicAuth(username, api_key)
+    )
     events = response_get.json() if response_get.status_code == 200 else []
 
     for event in events:
@@ -56,7 +81,9 @@ def delete_events(athlete_id, username, api_key, oldest_date, newest_date, categ
             continue
         event_id = event['id']
         url_del = f"{url_base}/events/{event_id}".format(athlete_id=athlete_id)
-        response_del = requests.delete(url_del, headers=API_headers, auth=HTTPBasicAuth(username, api_key))
+        response_del = call_with_retries(
+            requests.delete, url_del, headers=API_headers, auth=HTTPBasicAuth(username, api_key)
+        )
         if response_del.status_code == 200:
             logging.info(f"Deleted {category.lower()} event ID={event_id}")
         else:
@@ -89,7 +116,9 @@ def create_note_event(start_date, end_date, description, period, athlete_id, use
         "color": color
     }
 
-    response_post = requests.post(url_post, headers=API_headers, json=post_data, auth=HTTPBasicAuth(username, api_key))
+    response_post = call_with_retries(
+        requests.post, url_post, headers=API_headers, json=post_data, auth=HTTPBasicAuth(username, api_key)
+    )
     if response_post.status_code == 200:
         logging.info(f"New event created from {start_date} to {end_date}!")
     else:
@@ -115,37 +144,132 @@ def create_description(period, start_date, end_date, first_a_event):
     description += note_underline_PERIOD
     return description
 
-def main():
-    df = pd.read_excel(ATP_file_path, sheet_name=ATP_sheet_name, engine='openpyxl')
-    df['start_date_local'] = pd.to_datetime(df['start_date_local'], format='%d-%b')
+def get_existing_period_notes(athlete_id, oldest_date, newest_date, username, api_key, note_name_PERIOD):
+    url_get = f"{url_base}/eventsjson".format(athlete_id=athlete_id)
+    params = {"oldest": oldest_date, "newest": newest_date, "category": "NOTE"}
+    response = call_with_retries(
+        requests.get, url_get, headers=API_headers, params=params, auth=HTTPBasicAuth(username, api_key)
+    )
+    notes = response.json() if response.status_code == 200 else []
+    # Only pick notes with correct prefix
+    period_notes = {}
+    for note in notes:
+        if note['name'].startswith(note_name_PERIOD):
+            key = (
+                note['start_date_local'],
+                note['end_date_local'],
+                note['name']
+            )
+            period_notes[key] = note
+    return period_notes
 
-    # Explicitly cast columns to compatible dtype
-    df['period'] = df['period'].astype(str)
-    df['start_date_local'] = df['start_date_local'].astype('datetime64[ns]')
-    df.fillna('', inplace=True)
-
-    # Strictly limit data to ATP period
-    oldest_date, newest_date = read_ATP_period(ATP_file_path)
-    oldest = pd.to_datetime(oldest_date)
-    newest = pd.to_datetime(newest_date)
-    df = df[(df['start_date_local'] >= oldest) & (df['start_date_local'] <= newest)]
-
-    # Define date range for deleting events
-    oldest_date = df['start_date_local'].min().strftime("%Y-%m-%dT00:00:00")
-    newest_date = df['start_date_local'].max().strftime("%Y-%m-%dT00:00:00")
-
-    # Delete existing period notes
-    delete_events(athlete_id, username, api_key, oldest_date, newest_date, "NOTE", note_name_PERIOD)
-
+def get_desired_period_notes(df):
+    desired_notes = {}
     for i in range(len(df)):
         start_date = df.at[i, 'start_date_local']
         period = df.at[i, 'period']
-
         if i == 0 or df.at[i-1, 'period'] != period:
             end_date = get_period_end_date(df, i)
             first_a_event = get_first_a_event(df, start_date.strftime("%Y-%m-%dT00:00:00"))
             description = create_description(period, start_date, end_date, first_a_event)
-            create_note_event(start_date, end_date, description, period, athlete_id, username, api_key)
+            name = f"{note_name_PERIOD} {handle_period_name(period)}"
+            color = get_note_color(period)
+            key = (
+                start_date.strftime("%Y-%m-%dT00:00:00"),
+                (end_date + timedelta(days=1)).strftime("%Y-%m-%dT00:00:00"),
+                name
+            )
+            desired_notes[key] = {
+                "category": "NOTE",
+                "start_date_local": key[0],
+                "end_date_local": key[1],
+                "name": name,
+                "description": description,
+                "color": color
+            }
+    return desired_notes
+
+def main():
+    oldest_date, newest_date = read_ATP_period(ATP_file_path)
+    oldest = pd.to_datetime(oldest_date)
+    newest = pd.to_datetime(newest_date)
+    now = datetime.now()
+
+    # Only prompt if ATP period includes today or past
+    if oldest < now:
+        answer = input("Do you want to delete notes in the past? (yes/no): ").strip().lower()
+        overwrite_past = answer == "yes"
+    else:
+        overwrite_past = True  # ATP is completely in the future, so no filter needed
+
+    df = pd.read_excel(ATP_file_path, sheet_name=ATP_sheet_name, engine='openpyxl')
+    df['start_date_local'] = pd.to_datetime(df['start_date_local'], format='%d-%b', errors='coerce')
+    df = df.dropna(subset=['start_date_local'])
+
+    # Strictly limit data to ATP period
+    df = df[(df['start_date_local'] >= oldest) & (df['start_date_local'] <= newest)]
+
+    # If not overwriting past, only keep future notes
+    if not overwrite_past:
+        df = df[df['start_date_local'] >= now]
+
+    # Define date range for NOTE events syncing
+    if df.empty:
+        logging.info("No notes to process for the selected ATP period.")
+        return
+
+    oldest_date = df['start_date_local'].min().strftime("%Y-%m-%dT00:00:00")
+    newest_date = df['start_date_local'].max().strftime("%Y-%m-%dT00:00:00")
+
+    # Build the desired notes dictionary
+    desired_notes = get_desired_period_notes(df)
+    # Read all existing notes for this period and prefix
+    existing_notes = get_existing_period_notes(athlete_id, oldest_date, newest_date, username, api_key, note_name_PERIOD)
+
+    # 1. Update existing notes if different, or create new notes
+    for key, desired_note in desired_notes.items():
+        existing_note = existing_notes.get(key)
+        if existing_note:
+            # Compare fields: description, color
+            if (
+                existing_note.get("description", "") != desired_note["description"]
+                or existing_note.get("color", "") != desired_note["color"]
+            ):
+                url_put = f"{url_base}/events/{existing_note['id']}".format(athlete_id=athlete_id)
+                put_data = {
+                    "description": desired_note["description"],
+                    "color": desired_note["color"]
+                }
+                response_put = call_with_retries(
+                    requests.put, url_put, headers=API_headers, json=put_data, auth=HTTPBasicAuth(username, api_key)
+                )
+                if response_put.status_code == 200:
+                    logging.info(f"Updated NOTE {desired_note['name']}")
+                else:
+                    logging.error(f"Failed to update NOTE {desired_note['name']}: {response_put.status_code}")
+            else:
+                logging.info(f"NOTE {desired_note['name']} is unchanged; no update needed.")
+        else:
+            # Create new NOTE
+            create_note_event(
+                pd.to_datetime(desired_note["start_date_local"]),
+                pd.to_datetime(desired_note["end_date_local"]) - timedelta(days=1),
+                desired_note["description"],
+                desired_note["name"].split()[-1],
+                athlete_id, username, api_key
+            )
+
+    # 2. Delete notes that are no longer needed
+    for key, existing_note in existing_notes.items():
+        if key not in desired_notes:
+            url_del = f"{url_base}/events/{existing_note['id']}".format(athlete_id=athlete_id)
+            response_del = call_with_retries(
+                requests.delete, url_del, headers=API_headers, auth=HTTPBasicAuth(username, api_key)
+            )
+            if response_del.status_code == 200:
+                logging.info(f"Deleted NOTE {existing_note['name']}")
+            else:
+                logging.error(f"Failed to delete NOTE {existing_note['name']}: {response_del.status_code}")
 
 if __name__ == "__main__":
     main()
