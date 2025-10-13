@@ -90,28 +90,30 @@ def delete_events(athlete_id, username, api_key, oldest_date, newest_date, categ
             logging.error(f"Error deleting {category.lower()} event ID={event_id}: {response_del.status_code}")
 
 def handle_period_name(period):
+    """Returns the cleaned, mapped period name for use in NOTE events and logic."""
     period = period.strip()
-    if period == "Trans":
-        return "Transition"
-    elif period == "Prep":
-        return "Preparation"
-    elif period and period[-1].isdigit() == False:
-        return period.strip()
+    # Map abbreviations to full names
+    abbreviation_map = {
+        "Trans": "Transition",
+        "Prep": "Preparation",
+    }
+    # If abbreviation, map
+    if period in abbreviation_map:
+        return abbreviation_map[period]
     return period
 
-def create_note_event(start_date, end_date, description, period, athlete_id, username, api_key):
+def create_note_event(start_date, end_date, description, period_name, athlete_id, username, api_key):
     url_base = f"https://intervals.icu/api/v1/athlete/{athlete_id}"
     url_post = f"{url_base}/events"
     API_headers = {"Content-Type": "application/json"}
 
-    period = handle_period_name(period)
-    color = get_note_color(period)
+    color = get_note_color(period_name)
 
     post_data = {
         "category": "NOTE",
         "start_date_local": start_date.strftime("%Y-%m-%dT00:00:00"),
         "end_date_local": (end_date + timedelta(days=1)).strftime("%Y-%m-%dT00:00:00"),  # Add an extra day
-        "name": f"{note_name_PERIOD} {period}",
+        "name": f"{note_name_PERIOD} {period_name}",
         "description": description,
         "color": color
     }
@@ -137,9 +139,8 @@ def populate_race_description(description, first_a_event):
         description = f"This (part) of the plan aims for **{first_a_event}**.\n\n" + description
     return description
 
-def create_description(period, start_date, end_date, first_a_event):
-    period = handle_period_name(period)
-    description = f"You are in the **{period}-period** (from {start_date.strftime('%d-%m-%Y')} to {end_date.strftime('%d-%m-%Y')}).\n\n"
+def create_description(period_name, start_date, end_date, first_a_event):
+    description = f"You are in the **{period_name}-period** (from {start_date.strftime('%d-%m-%Y')} to {end_date.strftime('%d-%m-%Y')}).\n\n"
     description = populate_race_description(description, first_a_event)
     description += note_underline_PERIOD
     return description
@@ -168,12 +169,14 @@ def get_desired_period_notes(df):
     for i in range(len(df)):
         start_date = df.at[i, 'start_date_local']
         period = df.at[i, 'period']
+        # Use cleaned full period name
+        period_name = handle_period_name(period)
         if i == 0 or df.at[i-1, 'period'] != period:
             end_date = get_period_end_date(df, i)
             first_a_event = get_first_a_event(df, start_date.strftime("%Y-%m-%dT00:00:00"))
-            description = create_description(period, start_date, end_date, first_a_event)
-            name = f"{note_name_PERIOD} {handle_period_name(period)}"
-            color = get_note_color(period)
+            description = create_description(period_name, start_date, end_date, first_a_event)
+            name = f"{note_name_PERIOD} {period_name}"
+            color = get_note_color(period_name)
             key = (
                 start_date.strftime("%Y-%m-%dT00:00:00"),
                 (end_date + timedelta(days=1)).strftime("%Y-%m-%dT00:00:00"),
@@ -185,7 +188,8 @@ def get_desired_period_notes(df):
                 "end_date_local": key[1],
                 "name": name,
                 "description": description,
-                "color": color
+                "color": color,
+                "period_name": period_name  # For later use
             }
     return desired_notes
 
@@ -255,7 +259,7 @@ def main():
                 pd.to_datetime(desired_note["start_date_local"]),
                 pd.to_datetime(desired_note["end_date_local"]) - timedelta(days=1),
                 desired_note["description"],
-                desired_note["name"].split()[-1],
+                desired_note["period_name"],  # Pass full cleaned period name
                 athlete_id, username, api_key
             )
 
