@@ -143,7 +143,8 @@ def add_load_check_description(row, previous_week_loads, previous_week_sheet_loa
     return description
 
 def get_existing_feedback_notes(athlete_id, username, api_key, oldest_date, newest_date, note_name_template_FEEDBACK):
-    url_get = f"{url_base}/eventsjson".format(athlete_id=athlete_id)
+    # Fetch NOTE events in the ATP window. We'll look up any existing NOTE that starts with our note name prefix.
+    url_get = f"{url_base}/eventsjson"
     params = {
         "oldest": oldest_date.strftime("%Y-%m-%dT00:00:00"),
         "newest": newest_date.strftime("%Y-%m-%dT00:00:00"),
@@ -153,18 +154,19 @@ def get_existing_feedback_notes(athlete_id, username, api_key, oldest_date, newe
     if response.status_code == 200:
         events = response.json()
         logging.info(f"Fetched existing feedback NOTE events for athlete {athlete_id}")
-        return {ev['name']: ev for ev in events if ev.get('category') == 'NOTE' and ev['name'].startswith(note_name_template_FEEDBACK.split('{')[0])}
+        prefix = note_name_template_FEEDBACK.split('{')[0]
+        return {ev['name']: ev for ev in events if ev.get('category') == 'NOTE' and ev.get('name', '').startswith(prefix)}
     logging.error(f"Failed to fetch existing feedback NOTE events: {response.status_code}")
     return {}
 
 def update_note_event(event_id, start_date, description, color, athlete_id, username, api_key, last_week):
-    url_put = f"{url_base}/events/{event_id}".format(athlete_id=athlete_id)
+    url_put = f"{url_base}/events/{event_id}"
     put_data = {
         "description": description,
         "color": color
     }
     response_put = call_with_retries(requests.put, url_put, headers=API_headers, json=put_data, auth=HTTPBasicAuth(username, api_key))
-    if response_put.status_code == 200:
+    if response_put.status_code in (200, 201):
         logging.info(f"Updated feedback NOTE event for week {last_week}")
     else:
         logging.error(f"Error updating feedback NOTE event for week {last_week}: {response_put.status_code}")
@@ -185,15 +187,15 @@ def create_note_event(start_date, description, color, athlete_id, username, api_
         "color": color,
         "for_week": "true"
     }
-    url_post = f"{url_base}/events".format(athlete_id=athlete_id)
+    url_post = f"{url_base}/events"
     response_post = call_with_retries(requests.post, url_post, headers=API_headers, json=post_data, auth=HTTPBasicAuth(username, api_key))
-    if response_post.status_code == 200:
+    if response_post.status_code in (200, 201, 204):
         logging.info(f"Created feedback NOTE event for week {last_week}")
     else:
         logging.error(f"Error creating feedback NOTE event for week {last_week}: {response_post.status_code}")
 
 def delete_note_event(event_id, athlete_id, username, api_key, last_week):
-    url_del = f"{url_base}/events/{event_id}".format(athlete_id=athlete_id)
+    url_del = f"{url_base}/events/{event_id}"
     response_del = call_with_retries(requests.delete, url_del, headers=API_headers, auth=HTTPBasicAuth(username, api_key))
     if response_del.status_code == 200:
         logging.info(f"Deleted feedback NOTE event for week {last_week}")
@@ -247,25 +249,19 @@ def main():
             "week": previous_week
         }
 
-    # Sync notes: update/create/delete as needed
+    # Sync notes: only create missing feedback NOTE events.
+    # Important: per request, do not update existing notes and do not delete notes.
     for note_name, note in desired_notes.items():
         ex_note = existing_notes.get(note_name)
         if ex_note:
-            if ex_note.get('description', '') != note["description"]:
-                logging.info(f"Updating feedback NOTE event: {note_name}")
-                update_note_event(ex_note['id'], note["start_date"], note["description"], note["color"], athlete_id, username, api_key, note["week"])
-            else:
-                logging.info(f"No update needed for feedback NOTE event: {note_name}")
+            logging.info(f"Feedback NOTE already exists for {note_name}; skipping creation/update.")
         else:
             logging.info(f"Creating feedback NOTE event: {note_name}")
             create_note_event(note["start_date"], note["description"], note["color"], athlete_id, username, api_key, note["week"])
         time.sleep(parse_delay)
-    # Delete obsolete notes
-    for note_name, ex_note in existing_notes.items():
-        if note_name not in desired_notes:
-            logging.info(f"Deleting obsolete feedback NOTE event: {note_name}")
-            delete_note_event(ex_note['id'], athlete_id, username, api_key, note_name)
-            time.sleep(parse_delay)
+
+    # We're intentionally NOT deleting obsolete notes and NOT updating existing notes.
+    # This script will only add new feedback NOTES when none exist for the week.
 
 if __name__ == "__main__":
     main()
