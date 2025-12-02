@@ -1,6 +1,6 @@
 # ATP2intervals.icu what does it do?
 
-This is a set of scripts that transfers data from an Annual Training Plan in Excel to intervals.icu. You can trickle down a weekly load to different types of sports (activities) and send them to intervals.icu.
+This is a set of scripts that transfers data from an Annual Training Plan in Excel to intervals.icu. You can trickle down a weekly load to different types of sports (activities) and send them to intervals.icu as a target load.
 
 The idea is that it must be an easy job to populate intervals.icu with the coach's made ATP. For now, this works quite ok!
 I made seperate scripts to keep it maintainable. The first 3 are most important to populate intervals.icu with the data from the ATP. The fourth scripts writes the planned weekly loads per activitytype from the workouts back to the excelsheet. So you can compare the advised weekly load (TSS) with the already planned load. In the excelsheet, you can overwrite the loads (they will be round-off), adjust them and rerun Script 1. Then the planned loads are equal with the target loads.
