@@ -87,8 +87,8 @@ Be compliant or....
 4. **User_Data**: In the tab User_Data you can put the athlete ID, API key, preferred unit system (metric or imperial) and some basic preferences like the color of the note.
 5. **Set up ATP**: Fill in the race calendar and some basic stuff like start and end of the ATP-period, yearly TSS. Fill in the ATP period per week (e.g. BASE 1-1) and the recommended load is listed in the next collumn. Then you can distribute the load to different sport types like RUN, RIDE and SWIM. In the sheet there is a check if the total of different weekly loads are equal to the recommended load.
 7. **Run**: Execute the scripts in the right order to sync your training plan with intervals.icu.
-8. **Check**: After running the first scripts the target_loads are placed in intervals.icu. 4_LOAD_CHECK.py rerieves the actual planned load from the trainingplans. So you can easily check if plans in intervals.icu are compliant with the ATP.
-9. **Check_Athlete**: Run 5_ATP_WEEKLY_LOAD_FEEDBACK_NOTES to check if the athlete ws compliant to the given load. (This is is that serious..)
+8. **Check**: After running the first scripts the target_loads are placed in intervals.icu. 4_LOAD_CHECK.py retrieves the actual planned load from the trainingplans. So you can easily check if plans in intervals.icu are compliant with the ATP.
+9. **Check_Athlete**: Run 5_ATP_WEEKLY_LOAD_FEEDBACK_NOTES to check if the athlete was compliant to the given load. (This is not ment to be that serious..)
 
 ## To Do
 
