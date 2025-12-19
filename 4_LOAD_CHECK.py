@@ -118,9 +118,24 @@ def export_to_excel(weekly_type_loads, weekly_target_loads, file_path):
 
 def main():
     df = pd.read_excel(ATP_file_path, sheet_name=ATP_sheet_name)
-    df.fillna(0, inplace=True)
+
+    # Ensure start_date_local is parsed as datetime (coerce errors to NaT)
+    df['start_date_local'] = pd.to_datetime(df['start_date_local'], errors='coerce')
+
+    # If there are no valid dates at all, stop and log an error
+    if df['start_date_local'].isna().all():
+        logging.error("No valid 'start_date_local' values found in the ATP sheet. Cannot determine date range.")
+        return
+
+    # Compute oldest and newest from the datetime column (no integer 0s mixed in)
     oldest_date = df['start_date_local'].min()
     newest_date = df['start_date_local'].max()
+
+    # Now safely fill numeric columns only (avoid replacing datetime NaT with 0)
+    numeric_cols = df.select_dtypes(include=['number']).columns
+    if len(numeric_cols) > 0:
+        df[numeric_cols] = df[numeric_cols].fillna(0)
+
     workouts = get_events(athlete_id, username, api_key, oldest_date, newest_date, "WORKOUT")
     race_b_events = get_events(athlete_id, username, api_key, oldest_date, newest_date, "RACE_B")
     race_c_events = get_events(athlete_id, username, api_key, oldest_date, newest_date, "RACE_C")
