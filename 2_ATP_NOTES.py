@@ -172,14 +172,15 @@ def add_period_description(row, description):
     period = row['period'] if not pd.isna(row['period']) else ""
     if period:
         period_name = handle_period_name(period)
-        #description += f"- You are in the **{period_name}** period of your training plan.\n\n"
-
         # Use the new 'week' column from ATP_Data to add contextual info about the week in the period.
         week_val = row.get('week', None)
         week_int = None
         try:
             if week_val is not None and not pd.isna(week_val):
                 week_int = int(week_val)
+                # treat 0 as "no week number"
+                if week_int == 0:
+                    week_int = None
         except Exception:
             week_int = None
 
@@ -191,17 +192,31 @@ def add_period_description(row, description):
             except Exception:
                 weekly_target_val = None
 
+        # Special meaning_core for Race and Transition periods
+        if period_name == "Race":
+            default_meaning_core = "a focus on the upcoming race, where we prioritise tapering, sharpening and optimal rest to peak for competition"
+        elif period_name == "Transition":
+            default_meaning_core = "a **more easy period**, focused on recovery and consolidating training adaptations"
+        elif period_name == "Peak":
+            default_meaning_core = "a **Peak period**  focused on balancing load and recovery to achieve optimal race readiness (generally 1–2 weeks before the event)."        
+        else:
+            default_meaning_core = None
+
         if week_int is not None:
-            if week_int == 1:
-                meaning_core = "the **start week** op de trainingperiod, where we"
-            elif week_int == 2:
-                meaning_core = "the **second week** op de trainingperiod, where we"
-            elif week_int == 3:
-                meaning_core = "the **third week** op de trainingperiod, where we"
-            elif week_int == 4:
-                meaning_core = "we ease a bit, so we just"
+            # If special period types, use their default core meaning regardless of week number
+            if default_meaning_core:
+                meaning_core = default_meaning_core
             else:
-                meaning_core = f"week {week_int} of the period"
+                if week_int == 1:
+                    meaning_core = "the **start week** op de trainingperiod, where we"
+                elif week_int == 2:
+                    meaning_core = "the **second week** op de trainingperiod, where we"
+                elif week_int == 3:
+                    meaning_core = "the **third week** op de trainingperiod, where we"
+                elif week_int == 4:
+                    meaning_core = "we ease a bit, so we just"
+                else:
+                    meaning_core = f"week {week_int} of the period"
 
             if weekly_target_val is not None:
                 meaning = f"{meaning_core} aim for a TSS of **{weekly_target_val}**"
@@ -209,6 +224,19 @@ def add_period_description(row, description):
                 meaning = meaning_core
 
             description += f"- This is **week {week_int}** of the **{period_name}** period, which means {meaning}.\n\n"
+        else:
+            # No week number (or zero) — different sentence form requested
+            if default_meaning_core:
+                meaning_core = default_meaning_core
+            else:
+                meaning_core = f"the **{period_name}** period"
+
+            if weekly_target_val is not None:
+                meaning = f"{meaning_core} where we aim for a TSS of **{weekly_target_val}**"
+            else:
+                meaning = meaning_core
+
+            description += f"- This is **the {period_name} period**, which means {meaning}.\n\n"
 
         if period == "Rest":
             description += f"**{do_at_rest}**\n\n"
