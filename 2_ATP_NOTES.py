@@ -171,7 +171,45 @@ def populate_description(description, first_a_event):
 def add_period_description(row, description):
     period = row['period'] if not pd.isna(row['period']) else ""
     if period:
-        description += f"- You are in the **{handle_period_name(period)}** period of your training plan.\n\n"
+        period_name = handle_period_name(period)
+        #description += f"- You are in the **{period_name}** period of your training plan.\n\n"
+
+        # Use the new 'week' column from ATP_Data to add contextual info about the week in the period.
+        week_val = row.get('week', None)
+        week_int = None
+        try:
+            if week_val is not None and not pd.isna(week_val):
+                week_int = int(week_val)
+        except Exception:
+            week_int = None
+
+        # Get the aimed weekly load from the 'Total_load_target' column.
+        weekly_target_val = None
+        if 'Total_load_target' in row and not pd.isna(row.get('Total_load_target')):
+            try:
+                weekly_target_val = int(round(float(row.get('Total_load_target'))))
+            except Exception:
+                weekly_target_val = None
+
+        if week_int is not None:
+            if week_int == 1:
+                meaning_core = "the **start week** op de trainingperiod, where we"
+            elif week_int == 2:
+                meaning_core = "the **second week** op de trainingperiod, where we"
+            elif week_int == 3:
+                meaning_core = "the **third week** op de trainingperiod, where we"
+            elif week_int == 4:
+                meaning_core = "we ease a bit, so we just"
+            else:
+                meaning_core = f"week {week_int} of the period"
+
+            if weekly_target_val is not None:
+                meaning = f"{meaning_core} aim for a TSS of **{weekly_target_val}**"
+            else:
+                meaning = meaning_core
+
+            description += f"- This is **week {week_int}** of the **{period_name}** period, which means {meaning}.\n\n"
+
         if period == "Rest":
             description += f"**{do_at_rest}**\n\n"
     return description
