@@ -1,6 +1,7 @@
 from ATP_common_config import *
 import time
 import random
+import re
 
 # --- API Rate Limiting and Retry Logic (from 1_ATP_LOAD.py) ---
 MAX_RETRIES = 4
@@ -25,19 +26,57 @@ def call_with_retries(request_func, *args, **kwargs):
             break
     return response  # Return last response for error handling
 
-def get_note_color(period): #To do: get this mapping from Excel
-    base_period = period.split()[0]
-    color_mapping = {
-        "Base": "yellow",
-        "Peak": "orange",
-        "Race": "red",
-        "Transition": "green",
-        "Preparation": "blue",
-        "Recovery": "purple",
-        "Rest": "cyan",
-        "Build": "blue"
-    }
-    return color_mapping.get(base_period, "black")
+def get_note_color(period):
+    """
+    Map period names (including numbered variants) to colors.
+
+    Requested mapping:
+      - Base 1: lightblue
+      - Base 2: blue
+      - Base 3: purple
+      - Build 1: orange
+      - Build 2: red
+      - Peak: magenta
+      - Race: yellow
+      - Transition or Rest: lightgreen
+
+    If an unnumbered 'Base' or 'Build' appears, a sensible default is chosen:
+      - 'Base' -> lightblue
+      - 'Build' -> orange
+
+    Unknown periods fall back to 'black'.
+    """
+    if not period:
+        return "black"
+
+    p = str(period).strip()
+    p_lower = p.lower()
+
+    # Base N (1-3)
+    m = re.match(r"^base\s*([1-3])$", p_lower)
+    if m:
+        return {"1": "lightblue", "2": "blue", "3": "purple"}[m.group(1)]
+
+    # Build N (1-2)
+    m = re.match(r"^build\s*([1-2])$", p_lower)
+    if m:
+        return {"1": "orange", "2": "red"}[m.group(1)]
+
+    # Exact or prefix matches
+    if p_lower.startswith("peak"):
+        return "magenta"
+    if p_lower.startswith("race"):
+        return "yellow"
+    if p_lower.startswith("transition") or p_lower.startswith("rest"):
+        return "lightgreen"
+
+    # Fallback sensible defaults for unnumbered variants
+    if p_lower.startswith("base"):
+        return "lightblue"
+    if p_lower.startswith("build"):
+        return "orange"
+
+    return "black"
 
 def parse_atp_date(date_str):
     for fmt in ("%d-%m-%Y", "%Y-%m-%d %H:%M:%S", "%Y-%m-%d"):
