@@ -208,11 +208,11 @@ def add_period_description(row, description):
                 meaning_core = default_meaning_core
             else:
                 if week_int == 1:
-                    meaning_core = "the **start week** op de trainingperiod, where we"
+                    meaning_core = "the **start week** of the trainingperiod, where we"
                 elif week_int == 2:
-                    meaning_core = "the **second week** op de trainingperiod, where we"
+                    meaning_core = "the **second week** of the  trainingperiod, where we"
                 elif week_int == 3:
-                    meaning_core = "the **third week** op de trainingperiod, where we"
+                    meaning_core = "the **third week** of the  trainingperiod, where we"
                 elif week_int == 4:
                     meaning_core = "we ease a bit, so we just"
                 else:
